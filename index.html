@@ -336,7 +336,7 @@
         }
 
         /* ==========================================================================
-           03. NAVIGATION (BLOG.GOOGLE STYLE)
+           03. NAVIGATION (BLOG.GOOGLE STYLE + HIDE ON SCROLL HEADER)
         ========================================================================== */
         header.top-nav {
             position: sticky;
@@ -346,9 +346,34 @@
             justify-content: space-between;
             align-items: center;
             padding: 12px 5%;
-            transition: all 0.3s ease;
             gap: 12px;
             width: 100%;
+            transform: translate3d(0, 0, 0);
+            will-change: transform;
+            transition:
+                transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+                background-color 0.25s ease,
+                box-shadow 0.25s ease;
+        }
+
+        header.top-nav.is-scrolled {
+            background: var(--glass-bg-hover);
+            box-shadow: var(--glass-shadow-hover);
+        }
+
+        header.top-nav.is-hidden {
+            transform: translate3d(0, -110%, 0);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            header.top-nav {
+                transition: opacity 0.22s ease, background-color 0.25s ease, box-shadow 0.25s ease;
+            }
+            header.top-nav.is-hidden {
+                transform: none;
+                opacity: 0;
+                pointer-events: none;
+            }
         }
 
         .logo-container {
@@ -1355,118 +1380,83 @@
         }
 
         /* ==========================================================================
-           11. SHATTER PAGE TRANSITION (LEARNING.HTML)
+           11. OVERLAY WIPE PAGE TRANSITION (LEARNING.HTML — SITE THEME & SLOW)
         ========================================================================== */
-        .shatter-stage {
+        .wipe-overlay {
             position: fixed;
             inset: 0;
             width: 100vw;
             height: 100vh;
             z-index: 9999;
-            pointer-events: all;
-            overflow: hidden;
-            perspective: 1100px;
-            perspective-origin: 50% 50%;
-            transform-style: preserve-3d;
-        }
-
-        .shatter-next-layer {
-            position: absolute;
-            inset: 0;
+            background: #f4f6f9;
+            border-right: 1px solid rgba(32, 33, 36, 0.08);
+            box-shadow: 24px 0 60px rgba(31, 38, 135, 0.14);
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 14px;
-            background: #f4f6f9;
-            opacity: 0;
-            transition: opacity 0.42s ease;
-            z-index: 1;
+            pointer-events: none;
+            transform: translate3d(-100%, 0, 0);
+            will-change: transform;
+            transition: transform 1.15s cubic-bezier(0.22, 1, 0.36, 1);
         }
 
-        html[data-theme="dark"] .shatter-next-layer {
+        html[data-theme="dark"] .wipe-overlay {
             background: #121316;
+            border-right-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 24px 0 60px rgba(0, 0, 0, 0.55);
         }
 
-        .shatter-next-layer.visible {
-            opacity: 1;
+        .wipe-overlay.is-covering {
+            pointer-events: all;
+            transform: translate3d(0%, 0, 0);
         }
 
-        .shatter-next-pill {
+        .wipe-overlay.is-exiting {
+            pointer-events: none;
+            transform: translate3d(100%, 0, 0);
+        }
+
+        .wipe-label {
             display: inline-flex;
             align-items: center;
             gap: 10px;
-            padding: 12px 22px;
+            padding: 12px 24px;
             border-radius: 999px;
             background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border: 1px solid var(--glass-border);
             box-shadow: var(--glass-shadow);
+            color: var(--text-dark);
             font-family: var(--font-brand);
             font-size: 0.96rem;
             font-weight: 600;
-            color: var(--text-dark);
+            letter-spacing: 0.01em;
+            opacity: 0;
+            transform: translate3d(-16px, 0, 0);
+            transition: opacity 0.45s ease 0.4s, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.4s;
         }
 
-        .shatter-piece {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 2;
-            will-change: transform, opacity;
-            backface-visibility: visible;
-            transform-style: preserve-3d;
-            overflow: hidden;
-            pointer-events: none;
+        .wipe-overlay.is-covering .wipe-label {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
         }
 
-        .shatter-piece-inner {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            min-height: 100vh;
-            background: #f4f6f9;
-            pointer-events: none;
+        .wipe-overlay.is-exiting .wipe-label {
+            opacity: 0;
+            transform: translate3d(16px, 0, 0);
+            transition-delay: 0s;
         }
 
-        html[data-theme="dark"] .shatter-piece-inner {
-            background: #121316;
-        }
-
-        .shatter-cracks-svg {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 3;
-            pointer-events: none;
-            transition: opacity 0.22s ease;
-        }
-
-        .shatter-crack-line {
-            fill: none;
-            stroke: rgba(255, 255, 255, 0.92);
-            stroke-width: 1.8;
-            stroke-linejoin: round;
-            filter: drop-shadow(0 0 4px rgba(66, 133, 244, 0.55));
-        }
-
-        html[data-theme="dark"] .shatter-crack-line {
-            stroke: rgba(255, 255, 255, 0.78);
-            filter: drop-shadow(0 0 6px rgba(66, 133, 244, 0.75));
-        }
-
-        body.shatter-hiding > header.top-nav,
-        body.shatter-hiding > main.container,
-        body.shatter-hiding > footer,
-        body.shatter-hiding > nav.mobile-quick-bar {
-            visibility: hidden;
-        }
-
-        body.shatter-reduced-fade {
+        body.wipe-reduced-fade {
             transition: opacity 0.28s ease;
             opacity: 0;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .wipe-overlay {
+                display: none !important;
+            }
         }
 
         /* ==========================================================================
@@ -1729,7 +1719,7 @@
     <!-- ==========================================================================
          TOP NAVIGATION (THE KEYWORD GLASS STYLE)
     ========================================================================= -->
-    <header class="top-nav glass">
+    <header class="top-nav glass" id="topNav">
         <a href="#home" class="logo-container">
             <div class="logo-dots">
                 <div class="dot dot-blue"></div>
@@ -2085,6 +2075,61 @@
                     intro.remove();
                 }
             });
+        })();
+
+        /* ==========================================================================
+           01. HIDE-ON-SCROLL HEADER ENGINE (MOBILE, TABLET & LAPTOP)
+           Settings: Speed=Normal, Comes back=On any scroll up, Shrinks=off
+        ========================================================================== */
+        (function initHideOnScrollHeader() {
+            const header = document.getElementById("topNav");
+            if (!header) return;
+
+            const TOP_REVEAL_ZONE = 72;
+            const JITTER_THRESHOLD = 6;
+
+            let lastY = window.scrollY || window.pageYOffset || 0;
+            let hidden = false;
+            let ticking = false;
+
+            function updateHeader() {
+                ticking = false;
+                const currentY = Math.max(0, window.scrollY || window.pageYOffset || 0);
+                const delta = currentY - lastY;
+
+                header.classList.toggle("is-scrolled", currentY > 12);
+
+                const searchFocused = document.activeElement && header.contains(document.activeElement) && document.activeElement.tagName === "INPUT";
+                if (currentY <= TOP_REVEAL_ZONE || searchFocused) {
+                    if (hidden) {
+                        hidden = false;
+                        header.classList.remove("is-hidden");
+                    }
+                    lastY = currentY;
+                    return;
+                }
+
+                if (Math.abs(delta) < JITTER_THRESHOLD) {
+                    return;
+                }
+
+                if (delta > 0 && !hidden) {
+                    hidden = true;
+                    header.classList.add("is-hidden");
+                } else if (delta < 0 && hidden) {
+                    hidden = false;
+                    header.classList.remove("is-hidden");
+                }
+
+                lastY = currentY;
+            }
+
+            window.addEventListener("scroll", () => {
+                if (!ticking) {
+                    ticking = true;
+                    requestAnimationFrame(updateHeader);
+                }
+            }, { passive: true });
         })();
 
         /* ==========================================================================
@@ -2887,255 +2932,59 @@ passwordauthentication no`
         })();
 
         /* ==========================================================================
-           SHATTER PAGE TRANSITION ENGINE (LEARNING.HTML ONLY)
-           Settings: Pieces=Medium, Breaks=Center, Gravity=Normal, Speed=Normal,
-                     Shows cracks=on, Tumbles in 3D=on, Reduced motion=fade
+           OVERLAY WIPE PAGE TRANSITION ENGINE (LEARNING.HTML — SITE THEME & SLOW)
         ========================================================================== */
-        (function initLearningShatterTransition() {
+        (function initLearningOverlayWipe() {
             let isTransitioning = false;
             const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-            function cleanupShatter() {
+            function cleanupWipe() {
                 isTransitioning = false;
-                document.body.classList.remove("shatter-hiding", "shatter-reduced-fade");
-                document.querySelectorAll(".shatter-stage").forEach(el => el.remove());
+                document.body.classList.remove("wipe-reduced-fade");
+                document.querySelectorAll(".wipe-overlay").forEach(el => el.remove());
             }
 
-            window.addEventListener("pageshow", cleanupShatter);
+            window.addEventListener("pageshow", cleanupWipe);
 
-            function buildViewportSnapshot(scrollY) {
-                const wrap = document.createElement("div");
-                wrap.className = "shatter-piece-inner";
-
-                const bg = document.querySelector(".ambient-bg");
-                if (bg) {
-                    const bgClone = bg.cloneNode(true);
-                    bgClone.style.position = "absolute";
-                    bgClone.style.zIndex = "0";
-                    wrap.appendChild(bgClone);
-                }
-
-                const scrollContainer = document.createElement("div");
-                scrollContainer.style.position = "relative";
-                scrollContainer.style.zIndex = "1";
-                scrollContainer.style.transform = `translate3d(0, ${-scrollY}px, 0)`;
-
-                const mainEl = document.querySelector("main.container");
-                const footerEl = document.querySelector("footer");
-                if (mainEl) scrollContainer.appendChild(mainEl.cloneNode(true));
-                if (footerEl) scrollContainer.appendChild(footerEl.cloneNode(true));
-
-                const headerEl = document.querySelector("header.top-nav");
-                if (headerEl) {
-                    const headerClone = headerEl.cloneNode(true);
-                    headerClone.style.position = "absolute";
-                    headerClone.style.top = "0";
-                    headerClone.style.left = "0";
-                    headerClone.style.right = "0";
-                    headerClone.style.zIndex = "2";
-                    wrap.appendChild(headerClone);
-                }
-
-                wrap.appendChild(scrollContainer);
-                return wrap;
-            }
-
-            function generateUnevenPolygons(W, H) {
-                const isMobile = W <= 640;
-                const cols = isMobile ? 3 : 4;
-                const rows = isMobile ? 4 : 4;
-
-                const pts = [];
-                for (let r = 0; r <= rows; r++) {
-                    const rowPts = [];
-                    for (let c = 0; c <= cols; c++) {
-                        let x = (c / cols) * W;
-                        let y = (r / rows) * H;
-                        if (c > 0 && c < cols) {
-                            x += (Math.random() - 0.5) * (W / cols) * 0.52;
-                        }
-                        if (r > 0 && r < rows) {
-                            y += (Math.random() - 0.5) * (H / rows) * 0.52;
-                        }
-                        rowPts.push({ x, y });
-                    }
-                    pts.push(rowPts);
-                }
-
-                const polygons = [];
-                for (let r = 0; r < rows; r++) {
-                    for (let c = 0; c < cols; c++) {
-                        const tl = pts[r][c];
-                        const tr = pts[r][c + 1];
-                        const bl = pts[r + 1][c];
-                        const br = pts[r + 1][c + 1];
-                        if (Math.random() > 0.5) {
-                            polygons.push([tl, tr, br]);
-                            polygons.push([tl, br, bl]);
-                        } else {
-                            polygons.push([tl, tr, bl]);
-                            polygons.push([tr, br, bl]);
-                        }
-                    }
-                }
-                return polygons;
-            }
-
-            function triggerShatterTo(href) {
+            function triggerWipeTo(href) {
                 if (isTransitioning) return;
                 isTransitioning = true;
 
                 if (reducedMotion()) {
-                    document.body.classList.add("shatter-reduced-fade");
+                    document.body.classList.add("wipe-reduced-fade");
                     setTimeout(() => {
                         window.location.href = href;
                     }, 280);
                     return;
                 }
 
-                const W = window.innerWidth;
-                const H = window.innerHeight;
-                const scrollY = window.scrollY || window.pageYOffset || 0;
-                const impactX = W * 0.5;
-                const impactY = H * 0.5;
-                const maxDist = Math.hypot(impactX, impactY) || 1;
-
-                const stage = document.createElement("div");
-                stage.className = "shatter-stage";
-                stage.setAttribute("aria-hidden", "true");
-
-                const nextLayer = document.createElement("div");
-                nextLayer.className = "shatter-next-layer";
-                nextLayer.innerHTML = `
-                    <div class="shatter-next-pill">
+                const panel = document.createElement("div");
+                panel.className = "wipe-overlay";
+                panel.setAttribute("aria-hidden", "true");
+                panel.innerHTML = `
+                    <div class="wipe-label">
                         <span class="live-db-dot"></span>
                         <span>Learning Studio</span>
                     </div>
                 `;
-                stage.appendChild(nextLayer);
+                document.body.appendChild(panel);
 
-                const baseSnapshot = buildViewportSnapshot(scrollY);
-                const polygons = generateUnevenPolygons(W, H);
-
-                const svgNS = "http://www.w3.org/2000/svg";
-                const crackSvg = document.createElementNS(svgNS, "svg");
-                crackSvg.setAttribute("class", "shatter-cracks-svg");
-                crackSvg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-
-                const pieces = [];
-
-                polygons.forEach((poly) => {
-                    const cx = (poly[0].x + poly[1].x + poly[2].x) / 3;
-                    const cy = (poly[0].y + poly[1].y + poly[2].y) / 3;
-                    const dx = cx - impactX;
-                    const dy = cy - impactY;
-                    const dist = Math.hypot(dx, dy) || 1;
-                    const normDist = dist / maxDist;
-
-                    const path = document.createElementNS(svgNS, "polygon");
-                    path.setAttribute("class", "shatter-crack-line");
-                    path.setAttribute("points", poly.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" "));
-                    crackSvg.appendChild(path);
-
-                    const pieceEl = document.createElement("div");
-                    pieceEl.className = "shatter-piece";
-                    pieceEl.style.clipPath = `polygon(${poly.map(p => `${p.x.toFixed(1)}px ${p.y.toFixed(1)}px`).join(", ")})`;
-                    pieceEl.style.transformOrigin = `${cx.toFixed(1)}px ${cy.toFixed(1)}px`;
-                    pieceEl.appendChild(baseSnapshot.cloneNode(true));
-                    stage.appendChild(pieceEl);
-
-                    const burstSpeed = (340 + (1 - normDist) * 320) * (0.85 + Math.random() * 0.35);
-                    const angleJitter = (Math.random() - 0.5) * 0.32;
-                    const baseAngle = Math.atan2(dy, dx) + angleJitter;
-
-                    pieces.push({
-                        el: pieceEl,
-                        x: 0,
-                        y: 0,
-                        z: 0,
-                        vx: Math.cos(baseAngle) * burstSpeed,
-                        vy: Math.sin(baseAngle) * burstSpeed - 110,
-                        vz: (Math.random() - 0.35) * 380,
-                        rx: 0,
-                        ry: 0,
-                        rz: 0,
-                        vrx: (Math.random() - 0.5) * 340,
-                        vry: (Math.random() - 0.5) * 340,
-                        vrz: (Math.random() - 0.5) * 240,
-                        delay: 0.08 + normDist * 0.14,
-                        age: 0,
-                        life: 0.68 + Math.random() * 0.18,
-                        removed: false
-                    });
-                });
-
-                stage.appendChild(crackSvg);
-                document.body.appendChild(stage);
-                document.body.classList.add("shatter-hiding");
-
+                panel.getBoundingClientRect();
                 requestAnimationFrame(() => {
-                    nextLayer.classList.add("visible");
+                    panel.classList.add("is-covering");
                 });
 
-                const GRAVITY = 1550;
-                const startTime = performance.now();
-                let lastTime = startTime;
+                try {
+                    const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+                    sessionStorage.setItem("yk_wipe_in", isDark ? "dark" : "light");
+                } catch (_) {}
 
-                function animate(now) {
-                    const dt = Math.min(0.033, (now - lastTime) / 1000);
-                    const elapsed = (now - startTime) / 1000;
-                    lastTime = now;
-
-                    if (elapsed > 0.12 && crackSvg.style.opacity !== "0") {
-                        crackSvg.style.opacity = "0";
-                    }
-
-                    let aliveCount = 0;
-
-                    for (let i = 0; i < pieces.length; i++) {
-                        const p = pieces[i];
-                        if (p.removed) continue;
-
-                        if (elapsed < p.delay) {
-                            aliveCount++;
-                            continue;
-                        }
-
-                        p.age += dt;
-                        if (p.age >= p.life) {
-                            p.removed = true;
-                            p.el.remove();
-                            continue;
-                        }
-
-                        aliveCount++;
-                        p.vy += GRAVITY * dt;
-                        p.x += p.vx * dt;
-                        p.y += p.vy * dt;
-                        p.z += p.vz * dt;
-
-                        p.rx += p.vrx * dt;
-                        p.ry += p.vry * dt;
-                        p.rz += p.vrz * dt;
-
-                        const t = p.age / p.life;
-                        const opacity = Math.max(0, 1 - Math.pow(t, 1.55));
-
-                        p.el.style.transform = `translate3d(${p.x.toFixed(1)}px, ${p.y.toFixed(1)}px, ${p.z.toFixed(1)}px) rotateX(${p.rx.toFixed(1)}deg) rotateY(${p.ry.toFixed(1)}deg) rotateZ(${p.rz.toFixed(1)}deg)`;
-                        p.el.style.opacity = opacity.toFixed(3);
-                    }
-
-                    if (aliveCount > 0) {
-                        requestAnimationFrame(animate);
-                    } else {
-                        window.location.href = href;
-                    }
-                }
-
-                requestAnimationFrame(animate);
+                setTimeout(() => {
+                    window.location.href = href;
+                }, 1300);
             }
 
-            window.triggerLearningShatter = triggerShatterTo;
+            window.triggerLearningWipe = triggerWipeTo;
 
             document.addEventListener("click", (e) => {
                 const link = e.target.closest('a[href="learning.html"]');
@@ -3143,7 +2992,7 @@ passwordauthentication no`
                 if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
 
                 e.preventDefault();
-                triggerShatterTo(link.getAttribute("href"));
+                triggerWipeTo(link.getAttribute("href"));
             });
         })();
     </script>
