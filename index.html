@@ -150,6 +150,162 @@
         }
 
         /* ==========================================================================
+           00. PAGE INTRO OVERLAY (SLIDE-UP REVEAL: NORMAL, MEDIUM, SLIDE, SMOOTH)
+        ========================================================================== */
+        body.intro-lock {
+            overflow: hidden;
+        }
+
+        .page-intro {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: clamp(20px, 6vw, 48px);
+            background: #f4f6f9;
+            overflow: hidden;
+            opacity: 1;
+            transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.8s ease;
+        }
+
+        html[data-theme="dark"] .page-intro {
+            background: #121316;
+        }
+
+        .page-intro::before,
+        .page-intro::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.36;
+            pointer-events: none;
+        }
+
+        .page-intro::before {
+            width: clamp(240px, 44vw, 460px);
+            height: clamp(240px, 44vw, 460px);
+            background: var(--g-blue);
+            top: -12%;
+            left: -8%;
+        }
+
+        .page-intro::after {
+            width: clamp(220px, 38vw, 400px);
+            height: clamp(220px, 38vw, 400px);
+            background: var(--g-green);
+            bottom: -12%;
+            right: -8%;
+        }
+
+        html[data-theme="dark"] .page-intro::before,
+        html[data-theme="dark"] .page-intro::after {
+            opacity: 0.22;
+        }
+
+        .page-intro.is-exiting {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .page-intro-inner {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            max-width: 760px;
+            width: 100%;
+            padding: clamp(28px, 5vw, 52px) clamp(20px, 5vw, 56px);
+            border-radius: clamp(22px, 3.5vw, 32px);
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            transition: transform 0.8s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.65s ease;
+        }
+
+        .page-intro.is-exiting .page-intro-inner {
+            transform: translate3d(0, -14px, 0) scale(0.98);
+            opacity: 0;
+        }
+
+        /* Invisible edge mask for each sliding line */
+        .intro-line-mask {
+            display: block;
+            overflow: hidden;
+            padding-bottom: 0.08em;
+        }
+
+        .intro-line-mask + .intro-line-mask {
+            margin-top: clamp(8px, 1.5vw, 14px);
+        }
+
+        .intro-line-content {
+            display: inline-block;
+            will-change: transform;
+            transform: translate3d(0, 112%, 0);
+            animation: introSlideUp 4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        .intro-line-1 {
+            font-family: var(--font-brand);
+            font-size: clamp(2.3rem, 7.5vw, 4.6rem);
+            font-weight: 700;
+            line-height: 1.08;
+            letter-spacing: -0.03em;
+            color: var(--text-dark);
+            animation-delay: 0.10s;
+        }
+
+        .intro-line-1 .accent {
+            color: var(--g-blue);
+        }
+
+        .intro-line-2 {
+            font-family: var(--font-sans);
+            font-size: clamp(0.92rem, 2vw, 1.15rem);
+            font-weight: 500;
+            line-height: 1.5;
+            color: var(--text-gray);
+            animation-delay: 0.28s; /* Medium cascade delay */
+        }
+
+        .intro-line-3 {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            padding-top: 6px;
+            animation-delay: 0.46s; /* Medium cascade delay */
+        }
+
+        @keyframes introSlideUp {
+            0% {
+                transform: translate3d(0, 112%, 0);
+            }
+            100% {
+                transform: translate3d(0, 0%, 0);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .intro-line-content {
+                transform: none !important;
+                animation: none !important;
+            }
+            .page-intro,
+            .page-intro-inner {
+                transition: opacity 0.25s ease, visibility 0.25s ease !important;
+            }
+            .page-intro.is-exiting .page-intro-inner {
+                transform: none !important;
+            }
+        }
+
+        /* ==========================================================================
            02. AMBIENT BACKGROUND BLOBS FOR THE GLASS EFFECT
         ========================================================================== */
         .ambient-bg {
@@ -1759,7 +1915,29 @@
         }
     </style>
 </head>
-<body>
+<body class="intro-lock">
+
+    <!-- ==========================================================================
+         PAGE INTRO OVERLAY (HELLO FRIEND — SLIDE-UP REVEAL)
+    ========================================================================== -->
+    <div class="page-intro" id="pageIntro" role="region" aria-label="Welcome">
+        <div class="page-intro-inner">
+            <p class="intro-line-mask">
+                <span class="intro-line-content intro-line-1">Hello <span class="accent">friend.</span></span>
+            </p>
+            <p class="intro-line-mask">
+                <span class="intro-line-content intro-line-2">Yashar Kamran · Network &amp; Systems Portfolio</span>
+            </p>
+            <div class="intro-line-mask" aria-hidden="true">
+                <span class="intro-line-content intro-line-3">
+                    <span class="dot dot-blue"></span>
+                    <span class="dot dot-red"></span>
+                    <span class="dot dot-yellow"></span>
+                    <span class="dot dot-green"></span>
+                </span>
+            </div>
+        </div>
+    </div>
 
     <!-- Ambient Glass Background Blobs -->
     <div class="ambient-bg">
@@ -2114,6 +2292,47 @@
     </footer>
 
     <script>
+        /* ==========================================================================
+           00. PAGE INTRO CONTROLLER (SLIDE-UP REVEAL & SMOOTH AUTO-EXIT)
+        ========================================================================== */
+        (function initPageIntro() {
+            const intro = document.getElementById("pageIntro");
+            if (!intro) return;
+
+            const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            let dismissed = false;
+
+            function dismissIntro() {
+                if (dismissed) return;
+                dismissed = true;
+                intro.classList.add("is-exiting");
+                document.body.classList.remove("intro-lock");
+                setTimeout(() => {
+                    intro.setAttribute("aria-hidden", "true");
+                    intro.remove();
+                }, reducedMotion ? 260 : 850);
+            }
+
+            // Auto-reveal the site smoothly after the cascade settles
+            const holdTime = reducedMotion ? 1100 : 3100;
+            const autoTimer = setTimeout(dismissIntro, holdTime);
+
+            // Allow early dismiss on tap/click
+            intro.addEventListener("click", () => {
+                clearTimeout(autoTimer);
+                dismissIntro();
+            });
+
+            // Clean up immediately if returning via browser Back button (bfcache)
+            window.addEventListener("pageshow", (e) => {
+                if (e.persisted && intro.parentNode) {
+                    clearTimeout(autoTimer);
+                    document.body.classList.remove("intro-lock");
+                    intro.remove();
+                }
+            });
+        })();
+
         /* ==========================================================================
            SITE DATA (INFRASTRUCTURE & CONNECTIONS INTACT)
         ========================================================================== */
@@ -2714,7 +2933,6 @@ passwordauthentication no`
                 const scrollable = section.offsetHeight - window.innerHeight;
                 if (scrollable <= 0 || wordSpans.length === 0) return;
 
-                // Normal fill finish: spans cleanly across the pinned scroll range
                 const rawProgress = -rect.top / scrollable;
                 const progress = Math.min(1, Math.max(0, (rawProgress - 0.04) / 0.88));
                 const total = wordSpans.length;
