@@ -1229,6 +1229,121 @@
         }
 
         /* ==========================================================================
+           11. SHATTER PAGE TRANSITION (LEARNING.HTML)
+        ========================================================================== */
+        .shatter-stage {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            pointer-events: all;
+            overflow: hidden;
+            perspective: 1100px;
+            perspective-origin: 50% 50%;
+            transform-style: preserve-3d;
+        }
+
+        .shatter-next-layer {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            background: #f4f6f9;
+            opacity: 0;
+            transition: opacity 0.42s ease;
+            z-index: 1;
+        }
+
+        html[data-theme="dark"] .shatter-next-layer {
+            background: #121316;
+        }
+
+        .shatter-next-layer.visible {
+            opacity: 1;
+        }
+
+        .shatter-next-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 22px;
+            border-radius: 999px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            font-family: var(--font-brand);
+            font-size: 0.96rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .shatter-piece {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            will-change: transform, opacity;
+            backface-visibility: visible;
+            transform-style: preserve-3d;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .shatter-piece-inner {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            min-height: 100vh;
+            background: #f4f6f9;
+            pointer-events: none;
+        }
+
+        html[data-theme="dark"] .shatter-piece-inner {
+            background: #121316;
+        }
+
+        .shatter-cracks-svg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 3;
+            pointer-events: none;
+            transition: opacity 0.22s ease;
+        }
+
+        .shatter-crack-line {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.92);
+            stroke-width: 1.8;
+            stroke-linejoin: round;
+            filter: drop-shadow(0 0 4px rgba(66, 133, 244, 0.55));
+        }
+
+        html[data-theme="dark"] .shatter-crack-line {
+            stroke: rgba(255, 255, 255, 0.78);
+            filter: drop-shadow(0 0 6px rgba(66, 133, 244, 0.75));
+        }
+
+        body.shatter-hiding > header.top-nav,
+        body.shatter-hiding > main.container,
+        body.shatter-hiding > footer,
+        body.shatter-hiding > nav.mobile-quick-bar {
+            visibility: hidden;
+        }
+
+        body.shatter-reduced-fade {
+            transition: opacity 0.28s ease;
+            opacity: 0;
+        }
+
+        /* ==========================================================================
            10. RESPONSIVE MEDIA QUERIES (FLUID LAYOUTS & LIQUID GLASS MOBILE SELECT)
         ========================================================================== */
         .mobile-quick-bar {
@@ -1649,7 +1764,7 @@
                 aria-controls="navMenu"
                 data-glass-host
             >
-                <span class="mobile-toggle-label" id="mobileToggleLabel">Menu</span>
+                <span class="mobile-toggle-label" id="mobileToggleLabel">About</span>
                 <svg class="mobile-toggle-chevron" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                     <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
@@ -2498,21 +2613,20 @@ passwordauthentication no`
             const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
 
             let isOpen = false;
-            let progress = 0;        // 0 = closed inside button, 1 = fully settled open
+            let progress = 0;
             let target = 0;
             let rafId = 0;
             let lastTime = 0;
             let typeTimer = 0;
 
             const DURATION_MS = 460;
-            const SNAP_AT = 0.56;    // Point where liquid glass neck snaps & both halves jolt
-            const GAP_PX = 12;       // Distance between trigger and menu surface
+            const SNAP_AT = 0.56;
+            const GAP_PX = 12;
 
             function isMobileViewport() {
                 return window.innerWidth <= 860;
             }
 
-            // Letter-by-letter typing into the GlassSelect button
             function typeLabel(text) {
                 clearTimeout(typeTimer);
                 const clean = text.replace(/\s*↗\s*$/, "").trim();
@@ -2552,31 +2666,27 @@ passwordauthentication no`
                 const topFinal = btnRect.bottom + GAP_PX;
                 menu.style.top = `${topFinal}px`;
 
-                // Align menu right edge cleanly to viewport/button
                 const rightOffset = Math.max(12, window.innerWidth - btnRect.right);
                 menu.style.right = `${rightOffset}px`;
 
                 const menuWidth = menu.offsetWidth || 240;
                 const menuHeight = menu.offsetHeight || 280;
 
-                // Swell out of the button: scale & translate from trigger center
                 const easeOut = 1 - Math.pow(1 - p, 3);
                 const scaleX = (btnRect.width / menuWidth) + (1 - btnRect.width / menuWidth) * easeOut;
                 const scaleY = (btnRect.height / menuHeight) + (1 - btnRect.height / menuHeight) * easeOut;
 
-                // Post-snap elastic jolt on both halves
                 let menuJoltY = 0;
                 let btnJoltY = 0;
                 let btnScale = 1;
 
                 if (p > SNAP_AT) {
-                    const u = (p - SNAP_AT) / (1 - SNAP_AT); // 0..1 after snap
+                    const u = (p - SNAP_AT) / (1 - SNAP_AT);
                     const damp = Math.exp(-5.5 * u) * Math.sin(u * Math.PI * 2.2);
                     menuJoltY = damp * 5.5;
                     btnJoltY = -damp * 3.2;
                     btnScale = 1 + damp * 0.035;
                 } else {
-                    // Subtle downward pull on button while neck stretches
                     const pull = Math.sin((p / SNAP_AT) * Math.PI * 0.5);
                     btnJoltY = pull * 2.2;
                     btnScale = 1 - pull * 0.025;
@@ -2589,9 +2699,8 @@ passwordauthentication no`
                 menu.style.transform = `translate3d(0, ${currentY.toFixed(2)}px, 0) scale(${scaleX.toFixed(4)}, ${scaleY.toFixed(4)})`;
                 trigger.style.transform = `translate3d(0, ${btnJoltY.toFixed(2)}px, 0) scale(${btnScale.toFixed(4)})`;
 
-                // Draw stretching & snapping liquid glass neck between button and menu
                 if (p > 0.04 && p < SNAP_AT) {
-                    const stretch = p / SNAP_AT; // 0 -> 1 right before snap
+                    const stretch = p / SNAP_AT;
                     const cx = btnRect.left + btnRect.width / 2;
                     const y1 = btnRect.bottom - 5 + btnJoltY;
                     const y2 = topFinal + currentY + 8;
@@ -2600,7 +2709,6 @@ passwordauthentication no`
                         const ym = (y1 + y2) / 2;
                         const w1 = (btnRect.width * 0.36) * (1 - stretch * 0.45);
                         const w2 = (btnRect.width * 0.46) * (1 - stretch * 0.25);
-                        // Neck waist pinches thin right before snapping
                         const waist = Math.max(1.5, w1 * Math.pow(1 - stretch, 1.45));
 
                         const d = [
@@ -2697,7 +2805,6 @@ passwordauthentication no`
                 setOpen(!isOpen);
             });
 
-            // Select option: update active state, type label letter-by-letter, close menu
             items.forEach((link) => {
                 link.addEventListener("click", () => {
                     items.forEach((el) => {
@@ -2711,14 +2818,12 @@ passwordauthentication no`
                 });
             });
 
-            // Close on outside pointer click
             document.addEventListener("pointerdown", (e) => {
                 if (isOpen && !menu.contains(e.target) && !trigger.contains(e.target)) {
                     setOpen(false);
                 }
             });
 
-            // Keyboard Accessibility (WAI-ARIA Select / Listbox pattern)
             trigger.addEventListener("keydown", (e) => {
                 if (!isMobileViewport()) return;
                 if (e.key === "ArrowDown" || e.key === "ArrowUp" || e.key === "Enter" || e.key === " ") {
@@ -2844,7 +2949,6 @@ passwordauthentication no`
                         }
                     }
 
-                    // Jelly Spring: ends catching up to the handle
                     ends.v += ((cur - ends.x) * 620 - ends.v * 44) * dt;
                     ends.x += ends.v * dt;
                     p = cur;
@@ -2943,6 +3047,277 @@ passwordauthentication no`
 
             syncDimensions();
             updateDOM(0.5, 0);
+        })();
+
+        /* ==========================================================================
+           SHATTER PAGE TRANSITION ENGINE (LEARNING.HTML ONLY)
+           Settings: Pieces=Medium, Breaks=Center, Gravity=Normal, Speed=Normal,
+                     Shows cracks=on, Tumbles in 3D=on, Reduced motion=fade
+        ========================================================================== */
+        (function initLearningShatterTransition() {
+            let isTransitioning = false;
+            const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+            function cleanupShatter() {
+                isTransitioning = false;
+                document.body.classList.remove("shatter-hiding", "shatter-reduced-fade");
+                document.querySelectorAll(".shatter-stage").forEach(el => el.remove());
+            }
+
+            // Ensure clean state when returning via browser Back button (bfcache)
+            window.addEventListener("pageshow", cleanupShatter);
+
+            function buildViewportSnapshot(scrollY) {
+                const wrap = document.createElement("div");
+                wrap.className = "shatter-piece-inner";
+
+                const bg = document.querySelector(".ambient-bg");
+                if (bg) {
+                    const bgClone = bg.cloneNode(true);
+                    bgClone.style.position = "absolute";
+                    bgClone.style.zIndex = "0";
+                    wrap.appendChild(bgClone);
+                }
+
+                const scrollContainer = document.createElement("div");
+                scrollContainer.style.position = "relative";
+                scrollContainer.style.zIndex = "1";
+                scrollContainer.style.transform = `translate3d(0, ${-scrollY}px, 0)`;
+
+                const mainEl = document.querySelector("main.container");
+                const footerEl = document.querySelector("footer");
+                if (mainEl) scrollContainer.appendChild(mainEl.cloneNode(true));
+                if (footerEl) scrollContainer.appendChild(footerEl.cloneNode(true));
+
+                const headerEl = document.querySelector("header.top-nav");
+                if (headerEl) {
+                    const headerClone = headerEl.cloneNode(true);
+                    headerClone.style.position = "absolute";
+                    headerClone.style.top = "0";
+                    headerClone.style.left = "0";
+                    headerClone.style.right = "0";
+                    headerClone.style.zIndex = "2";
+                    wrap.appendChild(headerClone);
+                }
+
+                wrap.appendChild(scrollContainer);
+                return wrap;
+            }
+
+            function generateUnevenPolygons(W, H) {
+                // Medium piece count, adaptive for mobile/tablet/desktop smoothness
+                const isMobile = W <= 640;
+                const cols = isMobile ? 3 : 4;
+                const rows = isMobile ? 4 : 4;
+
+                const pts = [];
+                for (let r = 0; r <= rows; r++) {
+                    const rowPts = [];
+                    for (let c = 0; c <= cols; c++) {
+                        let x = (c / cols) * W;
+                        let y = (r / rows) * H;
+                        if (c > 0 && c < cols) {
+                            x += (Math.random() - 0.5) * (W / cols) * 0.52;
+                        }
+                        if (r > 0 && r < rows) {
+                            y += (Math.random() - 0.5) * (H / rows) * 0.52;
+                        }
+                        rowPts.push({ x, y });
+                    }
+                    pts.push(rowPts);
+                }
+
+                const polygons = [];
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        const tl = pts[r][c];
+                        const tr = pts[r][c + 1];
+                        const bl = pts[r + 1][c];
+                        const br = pts[r + 1][c + 1];
+                        if (Math.random() > 0.5) {
+                            polygons.push([tl, tr, br]);
+                            polygons.push([tl, br, bl]);
+                        } else {
+                            polygons.push([tl, tr, bl]);
+                            polygons.push([tr, br, bl]);
+                        }
+                    }
+                }
+                return polygons;
+            }
+
+            function triggerShatterTo(href) {
+                if (isTransitioning) return;
+                isTransitioning = true;
+
+                // Reduced motion: simple fade out / fade in with no pieces
+                if (reducedMotion()) {
+                    document.body.classList.add("shatter-reduced-fade");
+                    setTimeout(() => {
+                        window.location.href = href;
+                    }, 280);
+                    return;
+                }
+
+                const W = window.innerWidth;
+                const H = window.innerHeight;
+                const scrollY = window.scrollY || window.pageYOffset || 0;
+                const impactX = W * 0.5;
+                const impactY = H * 0.5;
+                const maxDist = Math.hypot(impactX, impactY) || 1;
+
+                const stage = document.createElement("div");
+                stage.className = "shatter-stage";
+                stage.setAttribute("aria-hidden", "true");
+
+                // Next page fade-in layer behind the shattering pieces
+                const nextLayer = document.createElement("div");
+                nextLayer.className = "shatter-next-layer";
+                nextLayer.innerHTML = `
+                    <div class="shatter-next-pill">
+                        <span class="live-db-dot"></span>
+                        <span>Learning Studio</span>
+                    </div>
+                `;
+                stage.appendChild(nextLayer);
+
+                const baseSnapshot = buildViewportSnapshot(scrollY);
+                const polygons = generateUnevenPolygons(W, H);
+
+                // SVG cracks layer (Shows the cracks: on)
+                const svgNS = "http://www.w3.org/2000/svg";
+                const crackSvg = document.createElementNS(svgNS, "svg");
+                crackSvg.setAttribute("class", "shatter-cracks-svg");
+                crackSvg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+
+                const pieces = [];
+
+                polygons.forEach((poly) => {
+                    const cx = (poly[0].x + poly[1].x + poly[2].x) / 3;
+                    const cy = (poly[0].y + poly[1].y + poly[2].y) / 3;
+                    const dx = cx - impactX;
+                    const dy = cy - impactY;
+                    const dist = Math.hypot(dx, dy) || 1;
+                    const normDist = dist / maxDist;
+
+                    // Draw crack outline
+                    const path = document.createElementNS(svgNS, "polygon");
+                    path.setAttribute("class", "shatter-crack-line");
+                    path.setAttribute("points", poly.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" "));
+                    crackSvg.appendChild(path);
+
+                    // Create piece trimmed to its own shape
+                    const pieceEl = document.createElement("div");
+                    pieceEl.className = "shatter-piece";
+                    pieceEl.style.clipPath = `polygon(${poly.map(p => `${p.x.toFixed(1)}px ${p.y.toFixed(1)}px`).join(", ")})`;
+                    pieceEl.style.transformOrigin = `${cx.toFixed(1)}px ${cy.toFixed(1)}px`;
+                    pieceEl.appendChild(baseSnapshot.cloneNode(true));
+                    stage.appendChild(pieceEl);
+
+                    // Burst away from center, nearest pieces launch first
+                    const burstSpeed = (340 + (1 - normDist) * 320) * (0.85 + Math.random() * 0.35);
+                    const angleJitter = (Math.random() - 0.5) * 0.32;
+                    const baseAngle = Math.atan2(dy, dx) + angleJitter;
+
+                    pieces.push({
+                        el: pieceEl,
+                        x: 0,
+                        y: 0,
+                        z: 0,
+                        vx: Math.cos(baseAngle) * burstSpeed,
+                        vy: Math.sin(baseAngle) * burstSpeed - 110, // slight upward pop before gravity pulls down
+                        vz: (Math.random() - 0.35) * 380,
+                        rx: 0,
+                        ry: 0,
+                        rz: 0,
+                        vrx: (Math.random() - 0.5) * 340,
+                        vry: (Math.random() - 0.5) * 340,
+                        vrz: (Math.random() - 0.5) * 240,
+                        delay: 0.08 + normDist * 0.14, // nearest impact launches first, right after cracks appear
+                        age: 0,
+                        life: 0.68 + Math.random() * 0.18,
+                        removed: false
+                    });
+                });
+
+                stage.appendChild(crackSvg);
+                document.body.appendChild(stage);
+                document.body.classList.add("shatter-hiding");
+
+                // Fade in destination layer behind the pieces
+                requestAnimationFrame(() => {
+                    nextLayer.classList.add("visible");
+                });
+
+                const GRAVITY = 1550; // Normal gravity (px/s^2)
+                const startTime = performance.now();
+                let lastTime = startTime;
+
+                function animate(now) {
+                    const dt = Math.min(0.033, (now - lastTime) / 1000);
+                    const elapsed = (now - startTime) / 1000;
+                    lastTime = now;
+
+                    // Fade out crack lines as soon as center pieces separate
+                    if (elapsed > 0.12 && crackSvg.style.opacity !== "0") {
+                        crackSvg.style.opacity = "0";
+                    }
+
+                    let aliveCount = 0;
+
+                    for (let i = 0; i < pieces.length; i++) {
+                        const p = pieces[i];
+                        if (p.removed) continue;
+
+                        if (elapsed < p.delay) {
+                            aliveCount++;
+                            continue;
+                        }
+
+                        p.age += dt;
+                        if (p.age >= p.life) {
+                            p.removed = true;
+                            p.el.remove();
+                            continue;
+                        }
+
+                        aliveCount++;
+                        p.vy += GRAVITY * dt;
+                        p.x += p.vx * dt;
+                        p.y += p.vy * dt;
+                        p.z += p.vz * dt;
+
+                        p.rx += p.vrx * dt;
+                        p.ry += p.vry * dt;
+                        p.rz += p.vrz * dt;
+
+                        const t = p.age / p.life;
+                        const opacity = Math.max(0, 1 - Math.pow(t, 1.55));
+
+                        // Move and turn only (no resizing) for smooth 60fps
+                        p.el.style.transform = `translate3d(${p.x.toFixed(1)}px, ${p.y.toFixed(1)}px, ${p.z.toFixed(1)}px) rotateX(${p.rx.toFixed(1)}deg) rotateY(${p.ry.toFixed(1)}deg) rotateZ(${p.rz.toFixed(1)}deg)`;
+                        p.el.style.opacity = opacity.toFixed(3);
+                    }
+
+                    if (aliveCount > 0) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        window.location.href = href;
+                    }
+                }
+
+                requestAnimationFrame(animate);
+            }
+
+            // Attach shatter transition only to links navigating to learning.html
+            document.addEventListener("click", (e) => {
+                const link = e.target.closest('a[href="learning.html"]');
+                if (!link) return;
+                if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+
+                e.preventDefault();
+                triggerShatterTo(link.getAttribute("href"));
+            });
         })();
     </script>
 </body>
