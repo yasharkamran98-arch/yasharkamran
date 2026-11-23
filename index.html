@@ -50,6 +50,11 @@
             --lg-surface-shadow: 0 20px 50px rgba(31, 38, 135, 0.16), 0 4px 14px rgba(0, 0, 0, 0.05);
             --lg-neck-fill: rgba(255, 255, 255, 0.74);
             --lg-neck-stroke: rgba(255, 255, 255, 0.92);
+
+            /* Scroll-Driven Text Fill Tokens */
+            --srf-dim: rgba(32, 33, 36, 0.22);
+            --srf-lit: #202124;
+            --srf-highlight: #4285F4;
         }
 
         html[data-theme="dark"] {
@@ -74,6 +79,11 @@
             --lg-surface-shadow: 0 24px 56px rgba(0, 0, 0, 0.58), 0 4px 16px rgba(0, 0, 0, 0.35);
             --lg-neck-fill: rgba(36, 38, 44, 0.80);
             --lg-neck-stroke: rgba(255, 255, 255, 0.22);
+
+            /* Scroll-Driven Text Fill Dark Tokens */
+            --srf-dim: rgba(241, 243, 244, 0.22);
+            --srf-lit: #f1f3f4;
+            --srf-highlight: #4285F4;
         }
 
         *, *::before, *::after {
@@ -85,7 +95,7 @@
 
         html {
             scroll-behavior: smooth;
-            overflow-x: hidden;
+            overflow-x: clip;
             width: 100%;
             -webkit-text-size-adjust: 100%;
         }
@@ -94,7 +104,7 @@
             font-family: var(--font-sans);
             color: var(--text-dark);
             background-color: #f4f6f9;
-            overflow-x: hidden;
+            overflow-x: clip;
             width: 100%;
             min-height: 100vh;
             line-height: 1.65;
@@ -694,6 +704,62 @@
             gap: 6px;
             font-weight: 700;
             white-space: nowrap;
+        }
+
+        /* ==========================================================================
+           05B. SCROLL-DRIVEN TEXT FILL STATEMENT SECTION
+        ========================================================================== */
+        .scroll-fill-section {
+            position: relative;
+            height: 230vh;
+            margin-bottom: clamp(40px, 6vw, 72px);
+        }
+
+        .scroll-fill-pin {
+            position: sticky;
+            top: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 76px 0 32px;
+        }
+
+        .scroll-fill-card {
+            width: 100%;
+            border-radius: clamp(18px, 3vw, 28px);
+            padding: clamp(28px, 5vw, 64px);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .scroll-fill-text {
+            font-family: var(--font-brand);
+            font-size: clamp(1.45rem, 3.2vw, 2.55rem);
+            font-weight: 600;
+            line-height: 1.38;
+            letter-spacing: -0.02em;
+            color: var(--srf-dim);
+        }
+
+        .srf-word {
+            color: var(--srf-dim);
+            transition: color 0.16s ease;
+        }
+
+        .srf-word.is-lit {
+            color: var(--srf-lit);
+        }
+
+        .srf-word.is-current {
+            color: var(--srf-highlight);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .srf-word {
+                transition: none !important;
+            }
         }
 
         /* ==========================================================================
@@ -1883,6 +1949,18 @@
             </article>
         </section>
 
+        <!-- SCROLL-DRIVEN TEXT FILL STATEMENT -->
+        <section class="scroll-fill-section" id="statementSection" aria-label="Focus Statement">
+            <div class="scroll-fill-pin">
+                <div class="scroll-fill-card glass">
+                    <span class="category cat-blue" data-i18n="srf_kicker">My Approach</span>
+                    <p class="scroll-fill-text" id="scrollFillParagraph">
+                        Good cybersecurity starts with understanding how real networks and servers work under the hood. Every topology I build, configure, and troubleshoot in my home lab brings me one step closer to my Ausbildung in Germany.
+                    </p>
+                </div>
+            </div>
+        </section>
+
         <!-- 01 / ABOUT -->
         <section id="about" class="searchable-section">
             <div class="section-header">
@@ -2514,6 +2592,8 @@ passwordauthentication no`
                 btn_explore_labs: "Explore Home Labs →",
                 btn_learning_hub: "Learning Notes ↗",
                 btn_open_cv: "Lebenslauf / CV",
+                srf_kicker: "My Approach",
+                srf_statement: "Good cybersecurity starts with understanding how real networks and servers work under the hood. Every topology I build, configure, and troubleshoot in my home lab brings me one step closer to my Ausbildung in Germany.",
                 ch1_idx: "01 / About Me",
                 ch1_title: "Hands-on learning, ready for Germany.",
                 ch1_sum: "How I started working with networks, how I practice in virtualized home labs, and why I want to build my career in Germany.",
@@ -2544,6 +2624,8 @@ passwordauthentication no`
                 btn_explore_labs: "Meine Heimlabore →",
                 btn_learning_hub: "Lernportal ↗",
                 btn_open_cv: "Lebenslauf ansehen",
+                srf_kicker: "Mein Ansatz",
+                srf_statement: "Gute IT-Sicherheit beginnt damit, echte Netzwerke und Server bis ins Detail zu verstehen. Jede Topologie, die ich in meinem Heimlabor aufbaue, konfiguriere und analysiere, bringt mich meiner Ausbildung in Deutschland einen Schritt näher.",
                 ch1_idx: "01 / Über mich",
                 ch1_title: "Praxis im Labor, bereit für Deutschland.",
                 ch1_sum: "Wie ich zur Netzwerktechnik kam, wie ich täglich in virtuellen Umgebungen übe und warum ich meine Ausbildung in Deutschland machen möchte.",
@@ -2577,6 +2659,7 @@ passwordauthentication no`
             });
             renderAbout();
             if (window.syncGlassSelectLabel) window.syncGlassSelectLabel();
+            if (window.updateScrollFillText) window.updateScrollFillText(translations[lang].srf_statement);
         }
 
         function showToast(msg) {
@@ -2596,6 +2679,74 @@ passwordauthentication no`
             const next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
             root.setAttribute("data-theme", next);
         }
+
+        /* ==========================================================================
+           SCROLL-DRIVEN TEXT FILL ENGINE
+           Settings: Highlights current word=on, Fill finishes=Normal, Color=Blue
+        ========================================================================== */
+        (function initScrollDrivenTextFill() {
+            const section = document.getElementById("statementSection");
+            const paragraph = document.getElementById("scrollFillParagraph");
+            if (!section || !paragraph) return;
+
+            let wordSpans = [];
+            let ticking = false;
+
+            function buildWords(text) {
+                const words = text.trim().split(/\s+/);
+                paragraph.innerHTML = "";
+                wordSpans = words.map((word, index) => {
+                    const span = document.createElement("span");
+                    span.className = "srf-word";
+                    span.textContent = word;
+                    paragraph.appendChild(span);
+                    if (index < words.length - 1) {
+                        paragraph.appendChild(document.createTextNode(" "));
+                    }
+                    return span;
+                });
+                updateFill();
+            }
+
+            function updateFill() {
+                ticking = false;
+                const rect = section.getBoundingClientRect();
+                const scrollable = section.offsetHeight - window.innerHeight;
+                if (scrollable <= 0 || wordSpans.length === 0) return;
+
+                // Normal fill finish: spans cleanly across the pinned scroll range
+                const rawProgress = -rect.top / scrollable;
+                const progress = Math.min(1, Math.max(0, (rawProgress - 0.04) / 0.88));
+                const total = wordSpans.length;
+                const litCount = Math.floor(progress * total);
+
+                for (let i = 0; i < total; i++) {
+                    const el = wordSpans[i];
+                    if (i < litCount) {
+                        el.classList.add("is-lit");
+                        el.classList.remove("is-current");
+                    } else if (i === litCount && progress > 0 && progress < 1) {
+                        el.classList.remove("is-lit");
+                        el.classList.add("is-current");
+                    } else {
+                        el.classList.remove("is-lit", "is-current");
+                    }
+                }
+            }
+
+            function onScrollOrResize() {
+                if (!ticking) {
+                    ticking = true;
+                    requestAnimationFrame(updateFill);
+                }
+            }
+
+            window.updateScrollFillText = buildWords;
+            buildWords(translations[currentLang].srf_statement);
+
+            window.addEventListener("scroll", onScrollOrResize, { passive: true });
+            window.addEventListener("resize", onScrollOrResize, { passive: true });
+        })();
 
         /* ==========================================================================
            LIQUID GLASSSELECT / GLASSPOPUP ENGINE (MOBILE NAVIGATION ONLY)
@@ -3064,7 +3215,6 @@ passwordauthentication no`
                 document.querySelectorAll(".shatter-stage").forEach(el => el.remove());
             }
 
-            // Ensure clean state when returning via browser Back button (bfcache)
             window.addEventListener("pageshow", cleanupShatter);
 
             function buildViewportSnapshot(scrollY) {
@@ -3105,7 +3255,6 @@ passwordauthentication no`
             }
 
             function generateUnevenPolygons(W, H) {
-                // Medium piece count, adaptive for mobile/tablet/desktop smoothness
                 const isMobile = W <= 640;
                 const cols = isMobile ? 3 : 4;
                 const rows = isMobile ? 4 : 4;
@@ -3150,7 +3299,6 @@ passwordauthentication no`
                 if (isTransitioning) return;
                 isTransitioning = true;
 
-                // Reduced motion: simple fade out / fade in with no pieces
                 if (reducedMotion()) {
                     document.body.classList.add("shatter-reduced-fade");
                     setTimeout(() => {
@@ -3170,7 +3318,6 @@ passwordauthentication no`
                 stage.className = "shatter-stage";
                 stage.setAttribute("aria-hidden", "true");
 
-                // Next page fade-in layer behind the shattering pieces
                 const nextLayer = document.createElement("div");
                 nextLayer.className = "shatter-next-layer";
                 nextLayer.innerHTML = `
@@ -3184,7 +3331,6 @@ passwordauthentication no`
                 const baseSnapshot = buildViewportSnapshot(scrollY);
                 const polygons = generateUnevenPolygons(W, H);
 
-                // SVG cracks layer (Shows the cracks: on)
                 const svgNS = "http://www.w3.org/2000/svg";
                 const crackSvg = document.createElementNS(svgNS, "svg");
                 crackSvg.setAttribute("class", "shatter-cracks-svg");
@@ -3200,13 +3346,11 @@ passwordauthentication no`
                     const dist = Math.hypot(dx, dy) || 1;
                     const normDist = dist / maxDist;
 
-                    // Draw crack outline
                     const path = document.createElementNS(svgNS, "polygon");
                     path.setAttribute("class", "shatter-crack-line");
                     path.setAttribute("points", poly.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" "));
                     crackSvg.appendChild(path);
 
-                    // Create piece trimmed to its own shape
                     const pieceEl = document.createElement("div");
                     pieceEl.className = "shatter-piece";
                     pieceEl.style.clipPath = `polygon(${poly.map(p => `${p.x.toFixed(1)}px ${p.y.toFixed(1)}px`).join(", ")})`;
@@ -3214,7 +3358,6 @@ passwordauthentication no`
                     pieceEl.appendChild(baseSnapshot.cloneNode(true));
                     stage.appendChild(pieceEl);
 
-                    // Burst away from center, nearest pieces launch first
                     const burstSpeed = (340 + (1 - normDist) * 320) * (0.85 + Math.random() * 0.35);
                     const angleJitter = (Math.random() - 0.5) * 0.32;
                     const baseAngle = Math.atan2(dy, dx) + angleJitter;
@@ -3225,7 +3368,7 @@ passwordauthentication no`
                         y: 0,
                         z: 0,
                         vx: Math.cos(baseAngle) * burstSpeed,
-                        vy: Math.sin(baseAngle) * burstSpeed - 110, // slight upward pop before gravity pulls down
+                        vy: Math.sin(baseAngle) * burstSpeed - 110,
                         vz: (Math.random() - 0.35) * 380,
                         rx: 0,
                         ry: 0,
@@ -3233,7 +3376,7 @@ passwordauthentication no`
                         vrx: (Math.random() - 0.5) * 340,
                         vry: (Math.random() - 0.5) * 340,
                         vrz: (Math.random() - 0.5) * 240,
-                        delay: 0.08 + normDist * 0.14, // nearest impact launches first, right after cracks appear
+                        delay: 0.08 + normDist * 0.14,
                         age: 0,
                         life: 0.68 + Math.random() * 0.18,
                         removed: false
@@ -3244,12 +3387,11 @@ passwordauthentication no`
                 document.body.appendChild(stage);
                 document.body.classList.add("shatter-hiding");
 
-                // Fade in destination layer behind the pieces
                 requestAnimationFrame(() => {
                     nextLayer.classList.add("visible");
                 });
 
-                const GRAVITY = 1550; // Normal gravity (px/s^2)
+                const GRAVITY = 1550;
                 const startTime = performance.now();
                 let lastTime = startTime;
 
@@ -3258,7 +3400,6 @@ passwordauthentication no`
                     const elapsed = (now - startTime) / 1000;
                     lastTime = now;
 
-                    // Fade out crack lines as soon as center pieces separate
                     if (elapsed > 0.12 && crackSvg.style.opacity !== "0") {
                         crackSvg.style.opacity = "0";
                     }
@@ -3294,7 +3435,6 @@ passwordauthentication no`
                         const t = p.age / p.life;
                         const opacity = Math.max(0, 1 - Math.pow(t, 1.55));
 
-                        // Move and turn only (no resizing) for smooth 60fps
                         p.el.style.transform = `translate3d(${p.x.toFixed(1)}px, ${p.y.toFixed(1)}px, ${p.z.toFixed(1)}px) rotateX(${p.rx.toFixed(1)}deg) rotateY(${p.ry.toFixed(1)}deg) rotateZ(${p.rz.toFixed(1)}deg)`;
                         p.el.style.opacity = opacity.toFixed(3);
                     }
@@ -3309,7 +3449,6 @@ passwordauthentication no`
                 requestAnimationFrame(animate);
             }
 
-            // Attach shatter transition only to links navigating to learning.html
             document.addEventListener("click", (e) => {
                 const link = e.target.closest('a[href="learning.html"]');
                 if (!link) return;
