@@ -1,0 +1,2500 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+<meta name="description" content="Learning — Programming, Networking, Linux and Cybersecurity | Yashar Kamran">
+<title>The Keyword | Learning Studio — Yashar Kamran</title>
+
+<!-- Google Fonts: Inter, Outfit, JetBrains Mono -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Material Icons -->
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* =========================================================
+   FIREBASE CONFIG (yasharkamran-ce30f)
+========================================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyA0gDMEwjQwFBivTTAZvZWBbHmYqImLvZk",
+  authDomain: "yasharkamran-ce30f.firebaseapp.com",
+  projectId: "yasharkamran-ce30f",
+  storageBucket: "yasharkamran-ce30f.firebasestorage.app",
+  messagingSenderId: "779918861498",
+  appId: "1:779918861498:web:53c9a96736526e10ee4e83",
+  measurementId: "G-2BJ55Z1LV0"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+/* =========================================================
+   GLOBAL STATE
+========================================================= */
+let courses = [];
+let currentCourse = null;
+let currentLesson = null;
+
+// Active view mode: "lesson" | "chapterQuiz" | "finalExam"
+let activeViewMode = "lesson";
+let activeQuizChapterId = null;
+let userQuizAnswers = {};
+let isQuizSubmitted = false;
+
+let chaptersUnsubscribe = null;
+let chaptersUnsubscribes = []; 
+let articlesUnsubscribe = null;
+let finalExamUnsubscribe = null;
+
+const OPTION_LETTERS = ["A", "B", "C", "D"];
+
+/* =========================================================
+   HELPER: EXTRACT YOUTUBE ID & CLEAN MOBILE-FRIENDLY PLAYER
+========================================================= */
+function extractYouTubeId(url) {
+    if (!url) return null;
+    const raw = String(url).trim();
+    if (!raw) return null;
+
+    try {
+        const parsed = new URL(raw);
+        if (parsed.hostname.includes("youtu.be")) {
+            const id = parsed.pathname.split("/").filter(Boolean)[0];
+            if (id && id.length === 11) return id;
+        }
+        if (parsed.searchParams.get("v")) {
+            const id = parsed.searchParams.get("v").substring(0, 11);
+            if (id.length === 11) return id;
+        }
+        const parts = parsed.pathname.split("/").filter(Boolean);
+        const embedIdx = parts.findIndex(p => p === "embed" || p === "shorts" || p === "v");
+        if (embedIdx !== -1 && parts[embedIdx + 1]) {
+            return parts[embedIdx + 1].substring(0, 11);
+        }
+    } catch (e) {}
+
+    const regExp = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/i;
+    const match = raw.match(regExp);
+    if (match && match[1]) return match[1];
+    if (/^[a-zA-Z0-9_-]{11}$/.test(raw)) return raw;
+    return null;
+}
+
+window.loadVideoStream = function(frameBoxId, videoId) {
+    const container = document.getElementById(frameBoxId);
+    if (!container) return;
+
+    const originParam = window.location.protocol.startsWith("http")
+        ? `&origin=${encodeURIComponent(window.location.origin)}`
+        : "";
+    const embedSrc = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&playsinline=1${originParam}`;
+
+    container.innerHTML = `
+        <iframe 
+            src="${embedSrc}" 
+            title="YouTube video player" 
+            frameborder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+            allowfullscreen>
+        </iframe>
+    `;
+};
+
+let playerCounter = 0;
+
+function renderYouTubePlayer(item) {
+    if (!item) return "";
+    const rawUrl = item.youtube || item.video || item.videoUrl || item.youtubeUrl || "";
+    const videoId = extractYouTubeId(rawUrl);
+    if (!videoId) return "";
+
+    playerCounter += 1;
+    const boxId = `yt_frame_${playerCounter}_${videoId}`;
+    const thumbUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+
+    return `
+        <div class="video-player-card glass">
+            <div class="video-player-bar">
+                <div class="video-bar-left">
+                    <span class="video-pulse-dot"></span>
+                    <span>VIDEO TUTORIAL</span>
+                </div>
+                <div class="video-server-controls">
+                    <button type="button" class="srv-btn primary-play" onclick="window.loadVideoStream('${boxId}', '${videoId}')">
+                        ▶ PLAY HERE
+                    </button>
+                    <a href="https://www.youtube.com/watch?v=${videoId}" target="_blank" rel="noopener" class="srv-btn">
+                        YOUTUBE APP ↗
+                    </a>
+                </div>
+            </div>
+
+            <div class="video-frame-container" id="${boxId}">
+                <div class="video-poster-facade" onclick="window.loadVideoStream('${boxId}', '${videoId}')">
+                    <img src="${thumbUrl}" alt="Video Thumbnail" class="video-poster-img" loading="lazy"/>
+                    <div class="video-poster-overlay">
+                        <div class="video-play-circle">
+                            <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+                                <path d="M8 5v14l11-7z"></path>
+                            </svg>
+                        </div>
+                        <span class="video-play-caption">TAP TO WATCH VIDEO</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+/* =========================================================
+   MOBILE MENU TOGGLE FUNCTION
+========================================================= */
+window.toggleMobileMenu = function() {
+    const sidebar = document.querySelector('.sidebar.right');
+    const overlay = document.getElementById('mobileOverlay');
+    if (!sidebar || !overlay) return;
+    sidebar.classList.toggle('open');
+    if (sidebar.classList.contains('open')) {
+        overlay.classList.add('show');
+    } else {
+        overlay.classList.remove('show');
+    }
+};
+
+/* =========================================================
+   LISTEN TO COURSES
+========================================================= */
+function listenToCourses() {
+    const q = query(collection(db, "courses"), orderBy("createdAt", "asc"));
+    onSnapshot(q, snapshot => {
+        courses = [];
+        snapshot.forEach(item => {
+            courses.push({ id: item.id, ...item.data() });
+        });
+        renderCourses();
+
+        if (currentCourse) {
+            const updatedCurrent = courses.find(c => c.id === currentCourse.id);
+            if (updatedCurrent) {
+                currentCourse.title = updatedCurrent.title;
+                currentCourse.description = updatedCurrent.description;
+            }
+        }
+    }, error => {
+        console.error(error);
+        showToast("Could not load courses live. Check Firestore Rules.", "error");
+    });
+}
+
+/* =========================================================
+   RENDER COURSE SIDEBAR
+========================================================= */
+function renderCourses() {
+    const container = document.getElementById("courseList");
+    container.innerHTML = "";
+
+    if (!courses.length) {
+        container.innerHTML = `<div class="empty">No courses yet.</div>`;
+        return;
+    }
+
+    courses.forEach(course => {
+        const item = document.createElement("button");
+        item.className = "course-item";
+        if (currentCourse && currentCourse.id === course.id) item.classList.add("active");
+
+        item.innerHTML = `
+            <span class="course-icon">${course.icon || "◈"}</span>
+            <span class="item-label">${escapeHTML(course.title)}</span>
+        `;
+        item.onclick = () => {
+            openCourse(course.id);
+            if (window.innerWidth <= 900) {
+                document.querySelector('.sidebar.right').classList.add('open');
+                document.getElementById('mobileOverlay').classList.add('show');
+            }
+        };
+        container.appendChild(item);
+    });
+}
+
+/* =========================================================
+   HELPER: GET ALL LESSONS FLAT LIST
+========================================================= */
+function getAllLessons() {
+    if (!currentCourse || !currentCourse.chapters) return [];
+    return currentCourse.chapters.reduce((acc, chap) => acc.concat(chap.lessons || []), []);
+}
+
+/* =========================================================
+   OPEN COURSE (LISTENS TO CHAPTERS, LESSONS, QUIZZES & FINAL EXAM)
+========================================================= */
+function openCourse(courseId) {
+    currentCourse = courses.find(c => c.id === courseId);
+    if (!currentCourse) return;
+    currentLesson = null;
+    activeViewMode = "lesson";
+    activeQuizChapterId = null;
+    currentCourse.finalExam = [];
+
+    if (chaptersUnsubscribe) chaptersUnsubscribe();
+    if (finalExamUnsubscribe) finalExamUnsubscribe();
+    chaptersUnsubscribes.forEach(unsub => unsub());
+    chaptersUnsubscribes = [];
+
+    // Listen to Course Final Exam
+    const qFinal = query(collection(db, "courses", courseId, "finalExam"), orderBy("createdAt", "asc"));
+    finalExamUnsubscribe = onSnapshot(qFinal, snap => {
+        currentCourse.finalExam = [];
+        snap.forEach(d => currentCourse.finalExam.push({ id: d.id, ...d.data() }));
+        renderLessonSidebar();
+        if (activeViewMode === "finalExam") {
+            renderQuizOrExamView();
+        }
+    });
+
+    // Listen to Chapters
+    const qChap = query(collection(db, "courses", courseId, "chapters"), orderBy("createdAt", "asc"));
+    chaptersUnsubscribe = onSnapshot(qChap, snapshot => {
+        currentCourse.chapters = [];
+        
+        chaptersUnsubscribes.forEach(unsub => unsub());
+        chaptersUnsubscribes = [];
+
+        if (snapshot.empty) {
+            renderCourses();
+            renderLessonSidebar();
+            currentLesson = null;
+            renderEmptyCourse();
+            return;
+        }
+
+        snapshot.forEach(chapDoc => {
+            const chapter = { id: chapDoc.id, ...chapDoc.data(), lessons: [], quiz: [] };
+            currentCourse.chapters.push(chapter);
+
+            // Listen to Lessons in Chapter
+            const qLess = query(collection(db, "courses", courseId, "chapters", chapter.id, "lessons"), orderBy("createdAt", "asc"));
+            const unsubLess = onSnapshot(qLess, lessSnap => {
+                chapter.lessons = [];
+                lessSnap.forEach(lessDoc => {
+                    chapter.lessons.push({ id: lessDoc.id, chapterId: chapter.id, ...lessDoc.data() });
+                });
+                
+                renderCourses();
+                renderLessonSidebar();
+                
+                const allLessons = getAllLessons();
+                if (allLessons.length) {
+                    if (!currentLesson && activeViewMode === "lesson") {
+                        openLesson(courseId, allLessons[0].chapterId, allLessons[0].id);
+                    } else if (currentLesson && activeViewMode === "lesson") {
+                        const updatedLesson = allLessons.find(l => l.id === currentLesson.id);
+                        if (updatedLesson) {
+                            const existingArticles = currentLesson.articles || [];
+                            currentLesson = { ...updatedLesson, articles: existingArticles };
+                            renderLesson();
+                        }
+                    }
+                } else if (activeViewMode === "lesson") {
+                    currentLesson = null;
+                    renderEmptyCourse();
+                }
+            });
+            chaptersUnsubscribes.push(unsubLess);
+
+            // Listen to Quiz Questions in Chapter
+            const qQuiz = query(collection(db, "courses", courseId, "chapters", chapter.id, "quiz"), orderBy("createdAt", "asc"));
+            const unsubQuiz = onSnapshot(qQuiz, quizSnap => {
+                chapter.quiz = [];
+                quizSnap.forEach(qDoc => {
+                    chapter.quiz.push({ id: qDoc.id, ...qDoc.data() });
+                });
+                renderLessonSidebar();
+                if (activeViewMode === "chapterQuiz" && activeQuizChapterId === chapter.id) {
+                    renderQuizOrExamView();
+                }
+            });
+            chaptersUnsubscribes.push(unsubQuiz);
+        });
+    });
+}
+
+/* =========================================================
+   LESSON SIDEBAR WITH ACCORDION CHAPTERS, QUIZZES & FINAL EXAM
+========================================================= */
+function renderLessonSidebar() {
+    const container = document.getElementById("lessonList");
+    container.innerHTML = "";
+    if (!currentCourse || !currentCourse.chapters) return;
+
+    const title = document.createElement("div");
+    title.className = "sidebar-course-title";
+    title.textContent = currentCourse.title;
+    container.appendChild(title);
+
+    let globalLessonIndex = 1;
+
+    currentCourse.chapters.forEach(chapter => {
+        const hasCurrentLesson = (activeViewMode === "lesson" && currentLesson && chapter.lessons.some(l => l.id === currentLesson.id))
+                              || (activeViewMode === "chapterQuiz" && activeQuizChapterId === chapter.id);
+
+        const chapBtn = document.createElement("button");
+        chapBtn.className = "sidebar-chapter-btn";
+        if (hasCurrentLesson) chapBtn.classList.add("active-chap");
+        chapBtn.innerHTML = `<span class="chap-title-text">${escapeHTML(chapter.title)}</span> <span class="arrow">${hasCurrentLesson ? '▲' : '▼'}</span>`;
+        container.appendChild(chapBtn);
+
+        const lessonsDiv = document.createElement("div");
+        lessonsDiv.className = "chapter-lessons-container";
+        if (hasCurrentLesson) lessonsDiv.classList.add("open");
+
+        chapBtn.onclick = () => {
+            const isOpen = lessonsDiv.classList.contains("open");
+            
+            document.querySelectorAll(".chapter-lessons-container").forEach(el => el.classList.remove("open"));
+            document.querySelectorAll(".sidebar-chapter-btn .arrow").forEach(el => el.textContent = '▼');
+            document.querySelectorAll(".sidebar-chapter-btn").forEach(el => el.classList.remove("active-chap"));
+
+            if (!isOpen) {
+                lessonsDiv.classList.add("open");
+                chapBtn.classList.add("active-chap");
+                chapBtn.querySelector(".arrow").textContent = '▲';
+            }
+        };
+
+        if (chapter.lessons && chapter.lessons.length > 0) {
+            chapter.lessons.forEach(lesson => {
+                const button = document.createElement("button");
+                button.className = "lesson-item";
+                if (activeViewMode === "lesson" && currentLesson && currentLesson.id === lesson.id) {
+                    button.classList.add("active");
+                }
+
+                const hasVid = extractYouTubeId(lesson.youtube || lesson.video || lesson.videoUrl || "");
+
+                button.innerHTML = `
+                    <span class="lesson-number">${String(globalLessonIndex++).padStart(2, "0")}</span>
+                    <span class="item-label">${escapeHTML(lesson.title)}</span>
+                    ${hasVid ? `<span class="lesson-vid-icon" title="Includes Video">▶</span>` : ""}
+                `;
+                button.onclick = () => {
+                    openLesson(currentCourse.id, chapter.id, lesson.id);
+                    if (window.innerWidth <= 900) {
+                        document.querySelector('.sidebar.right').classList.remove('open');
+                        document.getElementById('mobileOverlay').classList.remove('show');
+                    }
+                };
+                lessonsDiv.appendChild(button);
+            });
+        } else {
+            const emptyLabel = document.createElement("div");
+            emptyLabel.className = "empty-note-sidebar";
+            emptyLabel.textContent = "No lessons yet.";
+            lessonsDiv.appendChild(emptyLabel);
+        }
+
+        // Chapter Quiz Button inside Accordion
+        if (chapter.quiz && chapter.quiz.length > 0) {
+            const quizBtn = document.createElement("button");
+            quizBtn.className = "lesson-item quiz-sidebar-btn";
+            if (activeViewMode === "chapterQuiz" && activeQuizChapterId === chapter.id) {
+                quizBtn.classList.add("active");
+            }
+            quizBtn.innerHTML = `
+                <span class="quiz-badge-icon">📝</span>
+                <span class="item-label">Chapter Quiz</span>
+                <span class="quiz-count-pill">${chapter.quiz.length} Q · 20 PT</span>
+            `;
+            quizBtn.onclick = () => {
+                window.openChapterQuiz(chapter.id);
+                if (window.innerWidth <= 900) {
+                    document.querySelector('.sidebar.right').classList.remove('open');
+                    document.getElementById('mobileOverlay').classList.remove('show');
+                }
+            };
+            lessonsDiv.appendChild(quizBtn);
+        }
+        
+        container.appendChild(lessonsDiv);
+    });
+
+    // Course Final Exam Button at the bottom of Sidebar
+    if (currentCourse.finalExam && currentCourse.finalExam.length > 0) {
+        const finalWrap = document.createElement("div");
+        finalWrap.className = "final-exam-sidebar-wrap";
+
+        const finalBtn = document.createElement("button");
+        finalBtn.className = "final-exam-sidebar-btn glass";
+        if (activeViewMode === "finalExam") {
+            finalBtn.classList.add("active");
+        }
+        finalBtn.innerHTML = `
+            <div class="final-exam-info-group">
+                <span class="final-exam-icon">🎓</span>
+                <div class="final-exam-text-wrap">
+                    <div class="final-exam-heading">COURSE FINAL EXAM</div>
+                    <div class="final-exam-subtext">
+                        ${currentCourse.finalExam.length} QUESTIONS // GRADED OUT OF 20
+                    </div>
+                </div>
+            </div>
+            <span class="final-exam-arrow">→</span>
+        `;
+        finalBtn.onclick = () => {
+            window.openCourseFinalExam();
+            if (window.innerWidth <= 900) {
+                document.querySelector('.sidebar.right').classList.remove('open');
+                document.getElementById('mobileOverlay').classList.remove('show');
+            }
+        };
+
+        finalWrap.appendChild(finalBtn);
+        container.appendChild(finalWrap);
+    }
+}
+
+/* =========================================================
+   OPEN LESSON & ARTICLES
+========================================================= */
+function openLesson(courseId, chapterId, lessonId) {
+    if (!currentCourse || !currentCourse.chapters) return;
+    
+    let foundLesson = null;
+    for (const chap of currentCourse.chapters) {
+        const less = chap.lessons.find(l => l.id === lessonId);
+        if (less) { foundLesson = less; break; }
+    }
+    
+    if (!foundLesson) return;
+
+    activeViewMode = "lesson";
+    activeQuizChapterId = null;
+    currentLesson = foundLesson;
+    currentLesson.articles = []; 
+    renderLesson();
+    renderLessonSidebar();
+
+    const contentScrollEl = document.getElementById("lessonContent");
+    if (contentScrollEl) contentScrollEl.scrollTop = 0;
+
+    if (articlesUnsubscribe) articlesUnsubscribe();
+    const qArt = query(collection(db, "courses", courseId, "chapters", chapterId, "lessons", lessonId, "articles"), orderBy("createdAt", "asc"));
+    
+    articlesUnsubscribe = onSnapshot(qArt, snapshot => {
+        currentLesson.articles = [];
+        snapshot.forEach(item => {
+            currentLesson.articles.push({ id: item.id, ...item.data() });
+        });
+        if (activeViewMode === "lesson") {
+            renderLesson();
+        }
+    });
+}
+
+/* =========================================================
+   RENDER LESSON
+========================================================= */
+function renderLesson() {
+    const content = document.getElementById("lessonContent");
+    if (!currentLesson) return;
+
+    const mainVideoHTML = renderYouTubePlayer(currentLesson);
+    const hasMainBody = currentLesson.content || mainVideoHTML || currentLesson.image || currentLesson.code;
+
+    const parentChapter = currentCourse.chapters.find(ch => ch.id === currentLesson.chapterId);
+    const hasChapterQuiz = parentChapter && parentChapter.quiz && parentChapter.quiz.length > 0;
+    const hasFinalExam = currentCourse.finalExam && currentCourse.finalExam.length > 0;
+
+    let lessonHTML = `
+        <div class="breadcrumbs">
+            <span>LEARNING</span> <span>/</span> <span>${escapeHTML(currentCourse.title)}</span> <span>/</span> <strong>${escapeHTML(currentLesson.title)}</strong>
+        </div>
+        <article class="lesson-page glass">
+            <div class="lesson-tag">● ${escapeHTML(currentCourse.title)}</div>
+            <h1>${escapeHTML(currentLesson.title)}</h1>
+            <div class="content-body">
+                ${!hasMainBody ? `<div class="empty-content">No content yet.</div>` : ""}
+                ${currentLesson.content ? `<p>${currentLesson.content}</p>` : ""}
+                ${mainVideoHTML}
+                ${currentLesson.image ? `<img src="${currentLesson.image}" alt="Lesson Image" loading="lazy"/>` : ""}
+                ${currentLesson.code ? `<pre><code>${escapeHTML(currentLesson.code)}</code></pre>` : ""}
+            </div>
+    `;
+
+    if (currentLesson.articles && currentLesson.articles.length > 0) {
+        lessonHTML += `<div class="articles-container">`;
+        currentLesson.articles.forEach(art => {
+            const articleVideoHTML = renderYouTubePlayer(art);
+            lessonHTML += `
+                <div class="article-block">
+                    <h3>${escapeHTML(art.title)}</h3>
+                    ${art.content ? `<p>${art.content}</p>` : ""}
+                    ${articleVideoHTML}
+                    ${art.image ? `<img src="${art.image}" alt="Article Image" loading="lazy"/>` : ""}
+                    ${art.code ? `<pre><code>${escapeHTML(art.code)}</code></pre>` : ""}
+                </div>
+            `;
+        });
+        lessonHTML += `</div>`;
+    }
+
+    if (hasChapterQuiz || hasFinalExam) {
+        lessonHTML += `<div class="lesson-assessment-cta">`;
+        if (hasChapterQuiz) {
+            const pts = Number((20 / parentChapter.quiz.length).toFixed(2));
+            lessonHTML += `
+                <div class="assessment-banner-card glass">
+                    <div class="assessment-text-area">
+                        <div class="assessment-kicker">CHAPTER ASSESSMENT // ${escapeHTML(parentChapter.title)}</div>
+                        <div class="assessment-title">Ready to test your knowledge on this chapter?</div>
+                        <div class="assessment-meta">${parentChapter.quiz.length} Questions · ${pts} Points Each · Total Score out of 20</div>
+                    </div>
+                    <button type="button" class="nav-button primary cta-btn" onclick="window.openChapterQuiz('${parentChapter.id}')">
+                        📝 START CHAPTER QUIZ →
+                    </button>
+                </div>
+            `;
+        }
+        if (hasFinalExam) {
+            const fPts = Number((20 / currentCourse.finalExam.length).toFixed(2));
+            lessonHTML += `
+                <div class="assessment-banner-card final glass">
+                    <div class="assessment-text-area">
+                        <div class="assessment-kicker" style="color:var(--g-blue)">COURSE FINAL EXAMINATION // ${escapeHTML(currentCourse.title)}</div>
+                        <div class="assessment-title">Take the Final Course Exam</div>
+                        <div class="assessment-meta">${currentCourse.finalExam.length} Questions · ${fPts} Points Each · Final Grade out of 20</div>
+                    </div>
+                    <button type="button" class="nav-button cta-btn" onclick="window.openCourseFinalExam()">
+                        🎓 START FINAL EXAM →
+                    </button>
+                </div>
+            `;
+        }
+        lessonHTML += `</div>`;
+    }
+
+    lessonHTML += `
+            <div class="lesson-navigation">
+                <button id="previousLesson" class="nav-button">← PREVIOUS</button>
+                <button id="nextLesson" class="nav-button primary">NEXT LESSON →</button>
+            </div>
+        </article>
+    `;
+    
+    content.innerHTML = lessonHTML;
+    setupLessonNavigation();
+}
+
+function setupLessonNavigation() {
+    const allLessons = getAllLessons();
+    const index = allLessons.findIndex(lesson => lesson.id === currentLesson.id);
+    const previous = document.getElementById("previousLesson");
+    const next = document.getElementById("nextLesson");
+
+    if (index <= 0) previous.disabled = true;
+    else previous.onclick = () => openLesson(currentCourse.id, allLessons[index - 1].chapterId, allLessons[index - 1].id);
+
+    if (index >= allLessons.length - 1) next.disabled = true;
+    else next.onclick = () => openLesson(currentCourse.id, allLessons[index + 1].chapterId, allLessons[index + 1].id);
+}
+
+/* =========================================================
+   QUIZ & FINAL EXAM ENGINE (4 OPTIONS, GRADED OUT OF 20)
+========================================================= */
+window.openChapterQuiz = function(chapterId) {
+    if (!currentCourse || !currentCourse.chapters) return;
+    const chap = currentCourse.chapters.find(c => c.id === chapterId);
+    if (!chap) return;
+
+    activeViewMode = "chapterQuiz";
+    activeQuizChapterId = chapterId;
+    userQuizAnswers = {};
+    isQuizSubmitted = false;
+
+    renderLessonSidebar();
+    renderQuizOrExamView();
+
+    const contentScrollEl = document.getElementById("lessonContent");
+    if (contentScrollEl) contentScrollEl.scrollTop = 0;
+};
+
+window.openCourseFinalExam = function() {
+    if (!currentCourse) return;
+    activeViewMode = "finalExam";
+    activeQuizChapterId = null;
+    userQuizAnswers = {};
+    isQuizSubmitted = false;
+
+    renderLessonSidebar();
+    renderQuizOrExamView();
+
+    const contentScrollEl = document.getElementById("lessonContent");
+    if (contentScrollEl) contentScrollEl.scrollTop = 0;
+};
+
+window.selectQuizOption = function(questionId, optionIndex) {
+    if (isQuizSubmitted) return;
+    userQuizAnswers[questionId] = optionIndex;
+    renderQuizOrExamView();
+};
+
+window.submitQuizOrExam = function() {
+    const questions = getActiveQuestionsList();
+    if (!questions.length) return;
+
+    const answeredCount = Object.keys(userQuizAnswers).length;
+    if (answeredCount < questions.length) {
+        const remaining = questions.length - answeredCount;
+        return showToast(`Please answer all questions! (${remaining} remaining)`, "error");
+    }
+
+    isQuizSubmitted = true;
+    renderQuizOrExamView();
+
+    const contentScrollEl = document.getElementById("lessonContent");
+    if (contentScrollEl) {
+        contentScrollEl.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    showToast("Assessment graded! Check your score out of 20.");
+};
+
+window.retryQuizOrExam = function() {
+    userQuizAnswers = {};
+    isQuizSubmitted = false;
+    renderQuizOrExamView();
+    const contentScrollEl = document.getElementById("lessonContent");
+    if (contentScrollEl) {
+        contentScrollEl.scrollTo({ top: 0, behavior: "smooth" });
+    }
+};
+
+window.backToLessonsFromQuiz = function() {
+    const allLessons = getAllLessons();
+    if (currentLesson) {
+        openLesson(currentCourse.id, currentLesson.chapterId, currentLesson.id);
+    } else if (allLessons.length > 0) {
+        openLesson(currentCourse.id, allLessons[0].chapterId, allLessons[0].id);
+    }
+};
+
+function getActiveQuestionsList() {
+    if (!currentCourse) return [];
+    if (activeViewMode === "chapterQuiz") {
+        const chap = (currentCourse.chapters || []).find(c => c.id === activeQuizChapterId);
+        return chap && Array.isArray(chap.quiz) ? chap.quiz : [];
+    }
+    if (activeViewMode === "finalExam") {
+        return Array.isArray(currentCourse.finalExam) ? currentCourse.finalExam : [];
+    }
+    return [];
+}
+
+function renderQuizOrExamView() {
+    const content = document.getElementById("lessonContent");
+    if (!content || !currentCourse) return;
+
+    const isFinal = activeViewMode === "finalExam";
+    const chapObj = !isFinal && currentCourse.chapters
+        ? currentCourse.chapters.find(c => c.id === activeQuizChapterId)
+        : null;
+
+    const questions = getActiveQuestionsList();
+    const totalQuestions = questions.length;
+    const pointsPerQuestion = totalQuestions > 0 ? Number((20 / totalQuestions).toFixed(2)) : 0;
+
+    const headerLabel = isFinal
+        ? `COURSE FINAL EXAMINATION // ${escapeHTML(currentCourse.title)}`
+        : `CHAPTER QUIZ // ${escapeHTML(chapObj ? chapObj.title : "")}`;
+
+    const pageTitle = isFinal
+        ? `${escapeHTML(currentCourse.title)} — Final Exam`
+        : `${escapeHTML(chapObj ? chapObj.title : "Chapter")} — Quiz`;
+
+    if (!totalQuestions) {
+        content.innerHTML = `
+            <div class="empty-screen glass">
+                <div class="empty-icon">📝</div>
+                <h2>${pageTitle}</h2>
+                <p>No questions have been added yet.</p>
+                <button type="button" class="nav-button" style="margin-top:18px;" onclick="window.backToLessonsFromQuiz()">
+                    ← BACK TO LESSON
+                </button>
+            </div>
+        `;
+        return;
+    }
+
+    let correctCount = 0;
+    if (isQuizSubmitted) {
+        questions.forEach(q => {
+            const chosen = userQuizAnswers[q.id];
+            const correctIdx = Number(q.correctIndex ?? 0);
+            if (chosen === correctIdx) correctCount++;
+        });
+    }
+
+    const finalScoreOut20 = Number(((correctCount / totalQuestions) * 20).toFixed(2));
+    const scorePercent = Math.round((correctCount / totalQuestions) * 100);
+    const isPassed = finalScoreOut20 >= 10;
+    const answeredCount = Object.keys(userQuizAnswers).length;
+
+    let html = `
+        <div class="breadcrumbs">
+            <span>LEARNING</span> <span>/</span> <span>${escapeHTML(currentCourse.title)}</span> <span>/</span> <strong>${isFinal ? "FINAL EXAM" : "CHAPTER QUIZ"}</strong>
+        </div>
+
+        <article class="lesson-page glass">
+            <div class="quiz-top-bar">
+                <div class="lesson-tag">● ${headerLabel}</div>
+                <button type="button" class="srv-btn" onclick="window.backToLessonsFromQuiz()">
+                    ← BACK TO LESSONS
+                </button>
+            </div>
+
+            <h1 class="quiz-main-heading">${pageTitle}</h1>
+
+            <div class="quiz-telemetry-strip">
+                <span>QUESTIONS: <strong>${totalQuestions}</strong></span>
+                <span class="sep-slash">//</span>
+                <span>VALUE: <strong>${pointsPerQuestion} PTS</strong></span>
+                <span class="sep-slash">//</span>
+                <span>TOTAL: <strong>20 / 20</strong></span>
+                <span class="sep-slash">//</span>
+                <span>ANSWERED: <strong>${answeredCount} / ${totalQuestions}</strong></span>
+            </div>
+    `;
+
+    if (isQuizSubmitted) {
+        html += `
+            <div class="score-result-card ${isPassed ? 'passed' : 'failed'}">
+                <div class="score-circle-box">
+                    <div class="score-big-number">${finalScoreOut20}</div>
+                    <div class="score-out-of">OUT OF 20</div>
+                </div>
+                <div class="score-details-box">
+                    <div class="score-status-badge">
+                        ${isPassed ? '✓ PASSED // EXCELLENT WORK' : '✕ NEEDS REVIEW // TRY AGAIN'}
+                    </div>
+                    <h3>Your Final Score: ${finalScoreOut20} / 20 (${scorePercent}%)</h3>
+                    <p>
+                        You answered <strong>${correctCount}</strong> out of <strong>${totalQuestions}</strong> questions correctly
+                        (${pointsPerQuestion} points per question). Review your answers below.
+                    </p>
+                    <div class="score-action-row">
+                        <button type="button" class="nav-button primary" onclick="window.retryQuizOrExam()">
+                            ↻ RETAKE ${isFinal ? 'EXAM' : 'QUIZ'}
+                        </button>
+                        <button type="button" class="nav-button" onclick="window.backToLessonsFromQuiz()">
+                            ← RETURN
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    html += `<div class="quiz-questions-list">`;
+
+    questions.forEach((q, qIdx) => {
+        const opts = Array.isArray(q.options) ? q.options : ["", "", "", ""];
+        const chosenIdx = userQuizAnswers[q.id];
+        const correctIdx = Number(q.correctIndex ?? 0);
+        const isCorrectAnswer = isQuizSubmitted && chosenIdx === correctIdx;
+
+        let cardStateClass = "";
+        if (isQuizSubmitted) {
+            cardStateClass = isCorrectAnswer ? "graded-correct" : "graded-wrong";
+        }
+
+        html += `
+            <div class="quiz-question-card ${cardStateClass}">
+                <div class="quiz-q-header">
+                    <span class="quiz-q-num">QUESTION ${String(qIdx + 1).padStart(2, "0")}</span>
+                    <span class="quiz-q-pts">${pointsPerQuestion} PTS</span>
+                </div>
+                <div class="quiz-q-text">${escapeHTML(q.question)}</div>
+                <div class="quiz-options-grid">
+        `;
+
+        opts.forEach((optText, optIdx) => {
+            const letter = OPTION_LETTERS[optIdx] || String(optIdx + 1);
+            const isSelected = chosenIdx === optIdx;
+
+            let optClass = "quiz-option-btn";
+            if (!isQuizSubmitted && isSelected) {
+                optClass += " selected";
+            } else if (isQuizSubmitted) {
+                if (optIdx === correctIdx) {
+                    optClass += " correct-option";
+                } else if (isSelected && optIdx !== correctIdx) {
+                    optClass += " wrong-option";
+                }
+            }
+
+            html += `
+                <button type="button" 
+                        class="${optClass}" 
+                        ${isQuizSubmitted ? "disabled" : ""}
+                        onclick="window.selectQuizOption('${q.id}', ${optIdx})">
+                    <span class="opt-letter">${letter}</span>
+                    <span class="opt-text">${escapeHTML(optText)}</span>
+                </button>
+            `;
+        });
+
+        html += `</div>`;
+
+        if (isQuizSubmitted) {
+            const correctLetter = OPTION_LETTERS[correctIdx] || "A";
+            html += `
+                <div class="quiz-feedback-box ${isCorrectAnswer ? 'ok' : 'err'}">
+                    <div>
+                        ${isCorrectAnswer 
+                            ? `✓ Correct! (+${pointsPerQuestion} pts)` 
+                            : `✕ Incorrect (0 pts) — Correct: Option ${correctLetter} (${escapeHTML(opts[correctIdx] || "")})`}
+                    </div>
+                    ${q.explanation ? `<div class="quiz-explanation-text">${escapeHTML(q.explanation)}</div>` : ""}
+                </div>
+            `;
+        }
+
+        html += `</div>`;
+    });
+
+    html += `</div>`;
+
+    if (!isQuizSubmitted) {
+        html += `
+            <div class="quiz-submit-footer">
+                <div class="quiz-submit-info">
+                    Answered <strong>${answeredCount}</strong> of <strong>${totalQuestions}</strong> · Graded out of <strong>20</strong>
+                </div>
+                <button type="button" class="nav-button primary submit-final-btn" onclick="window.submitQuizOrExam()">
+                    ✓ SUBMIT (OUT OF 20) →
+                </button>
+            </div>
+        `;
+    }
+
+    html += `</article>`;
+    content.innerHTML = html;
+}
+
+function renderEmptyCourse() {
+    document.getElementById("lessonContent").innerHTML = `
+        <div class="empty-screen glass">
+            <div class="empty-icon">◈</div>
+            <h2>${escapeHTML(currentCourse.title)}</h2>
+            <p>No lessons have been added to this course yet.</p>
+        </div>
+    `;
+}
+
+function showToast(message, type = "success") {
+    const toast = document.getElementById("toast");
+    if (!toast) return;
+    toast.textContent = message;
+    toast.className = `toast ${type} show`;
+    setTimeout(() => { toast.classList.remove("show"); }, 3200);
+}
+
+function escapeHTML(value) {
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+window.toggleSurfaceTheme = function() {
+    const html = document.documentElement;
+    const next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    html.setAttribute("data-theme", next);
+};
+
+window.addEventListener("DOMContentLoaded", listenToCourses);
+</script>
+
+<style>
+/* =========================================================
+   01. DESIGN TOKENS & SYSTEM BASE
+========================================================= */
+:root {
+    --g-blue: #4285F4;
+    --g-red: #EA4335;
+    --g-yellow: #FBBC05;
+    --g-green: #34A853;
+
+    --text-dark: #202124;
+    --text-gray: #5f6368;
+
+    --glass-bg: rgba(255, 255, 255, 0.58);
+    --glass-bg-hover: rgba(255, 255, 255, 0.84);
+    --glass-solid: rgba(255, 255, 255, 0.94);
+    --glass-border: rgba(255, 255, 255, 0.75);
+    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+    --glass-shadow-hover: 0 14px 42px 0 rgba(31, 38, 135, 0.13);
+
+    --border: rgba(0, 0, 0, 0.08);
+    --border-strong: rgba(0, 0, 0, 0.15);
+
+    --font-sans: 'Inter', sans-serif;
+    --font-display: 'Outfit', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+}
+
+html[data-theme="dark"] {
+    --text-dark: #f1f3f4;
+    --text-gray: #9aa0a6;
+    --glass-bg: rgba(32, 33, 36, 0.65);
+    --glass-bg-hover: rgba(45, 47, 51, 0.85);
+    --glass-solid: rgba(24, 26, 30, 0.96);
+    --glass-border: rgba(255, 255, 255, 0.12);
+    --glass-shadow: 0 10px 34px 0 rgba(0, 0, 0, 0.35);
+    --glass-shadow-hover: 0 16px 46px 0 rgba(0, 0, 0, 0.5);
+    --border: rgba(255, 255, 255, 0.09);
+    --border-strong: rgba(255, 255, 255, 0.18);
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+body {
+    background-color: #f4f6f9;
+    color: var(--text-dark);
+    font-family: var(--font-sans);
+    transition: background-color 0.35s ease, color 0.35s ease;
+    -webkit-font-smoothing: antialiased;
+}
+
+html[data-theme="dark"] body {
+    background-color: #121316;
+}
+
+::selection {
+    background: var(--g-blue);
+    color: #ffffff;
+}
+
+button {
+    font-family: inherit;
+    border: none;
+    outline: none;
+}
+
+/* =========================================================
+   02. BACKGROUND ANIMATIONS
+========================================================= */
+.ambient-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    overflow: hidden;
+    background: #f8f9fa;
+    pointer-events: none;
+    transition: background 0.35s ease;
+}
+
+html[data-theme="dark"] .ambient-bg {
+    background: #121316;
+}
+
+.blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(90px);
+    opacity: 0.42;
+    animation: float 15s infinite alternate ease-in-out;
+}
+
+html[data-theme="dark"] .blob {
+    opacity: 0.22;
+}
+
+.blob-1 { width: clamp(300px, 45vw, 500px); height: clamp(300px, 45vw, 500px); background: var(--g-blue); top: -10%; left: -5%; }
+.blob-2 { width: clamp(260px, 40vw, 400px); height: clamp(260px, 40vw, 400px); background: var(--g-red); top: 20%; right: -5%; animation-delay: 2s; }
+.blob-3 { width: clamp(280px, 42vw, 450px); height: clamp(280px, 42vw, 450px); background: var(--g-yellow); bottom: -10%; left: 20%; animation-delay: 4s; }
+.blob-4 { width: clamp(240px, 35vw, 350px); height: clamp(240px, 35vw, 350px); background: var(--g-green); bottom: 10%; right: 15%; animation-delay: 6s; }
+
+@keyframes float {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(30px, 45px) scale(1.08); }
+}
+
+.glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+}
+
+/* =========================================================
+   03. APP LAYOUT & SMART NON-OVERLAPPING HEADER
+========================================================= */
+.app {
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    height: 68px;
+    min-height: 68px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 clamp(12px, 2.5vw, 24px);
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    z-index: 20;
+    gap: 10px;
+    width: 100%;
+}
+
+/* Brand container prevents flex blowout */
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+}
+
+.logo-dots {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+.dot { width: 7px; height: 7px; border-radius: 50%; }
+.dot-blue { background: var(--g-blue); }
+.dot-red { background: var(--g-red); }
+.dot-yellow { background: var(--g-yellow); }
+.dot-green { background: var(--g-green); }
+
+.brand-name {
+    font-family: var(--font-display);
+    font-size: clamp(1rem, 2.2vw, 1.25rem);
+    font-weight: 600;
+    letter-spacing: -0.3px;
+    color: var(--text-dark);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+.brand-sub {
+    color: var(--text-gray);
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 0.95rem;
+    border-left: 2px solid var(--border-strong);
+    padding-left: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 1;
+}
+
+.live-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 50px;
+    border: 1px solid var(--glass-border);
+    background: rgba(52, 168, 83, 0.1);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--g-green);
+    flex-shrink: 0;
+}
+.live-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--g-green);
+    box-shadow: 0 0 8px var(--g-green);
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.header-button {
+    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.55);
+    color: var(--text-dark);
+    padding: 7px 12px;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+html[data-theme="dark"] .header-button {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.header-button:hover {
+    background: var(--g-blue);
+    color: #ffffff;
+    border-color: var(--g-blue);
+}
+
+/* 3-Column Studio Grid */
+.main {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(220px, 260px) minmax(0, 1fr) minmax(240px, 290px);
+}
+
+/* Sidebars */
+.sidebar {
+    min-width: 0;
+    overflow: hidden;
+    border-right: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+.sidebar.right {
+    border-right: 0;
+    border-left: 1px solid var(--glass-border);
+}
+.sidebar-inner {
+    height: 100%;
+    overflow-y: auto;
+    padding: 20px 14px;
+}
+.sidebar-title {
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--g-blue);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    margin-bottom: 12px;
+    padding: 0 6px;
+}
+
+/* Course & Lesson Items */
+.course-item, .lesson-item {
+    width: 100%;
+    border: 1px solid transparent;
+    background: rgba(255, 255, 255, 0.38);
+    color: var(--text-gray);
+    text-align: left;
+    padding: 10px 12px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 0.86rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+    transition: all 0.22s ease;
+    min-height: 42px;
+}
+
+html[data-theme="dark"] .course-item,
+html[data-theme="dark"] .lesson-item {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.course-item:hover, .lesson-item:hover {
+    background: var(--glass-bg-hover);
+    color: var(--text-dark);
+    transform: translateX(3px);
+}
+
+.course-item.active, .lesson-item.active {
+    background: var(--g-blue);
+    border-color: var(--g-blue);
+    color: #ffffff;
+    box-shadow: 0 6px 18px rgba(66, 133, 244, 0.28);
+}
+
+.item-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.course-icon {
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    background: rgba(66, 133, 244, 0.12);
+    color: var(--g-blue);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+    transition: all 0.22s ease;
+}
+
+.course-item.active .course-icon {
+    background: rgba(255, 255, 255, 0.22);
+    color: #ffffff;
+}
+
+.sidebar-course-title {
+    margin: 4px 8px 12px;
+    color: var(--text-dark);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Accordion Chapter Button */
+.sidebar-chapter-btn {
+    width: 100%;
+    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.45);
+    color: var(--text-dark);
+    text-align: left;
+    padding: 10px 12px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    cursor: pointer;
+    font-family: var(--font-display);
+    font-size: 0.82rem;
+    font-weight: 600;
+    margin-top: 8px;
+    transition: all 0.2s ease;
+}
+
+.chap-title-text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+html[data-theme="dark"] .sidebar-chapter-btn {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-chapter-btn:hover,
+.sidebar-chapter-btn.active-chap {
+    background: var(--glass-bg-hover);
+    border-color: var(--g-blue);
+    color: var(--g-blue);
+}
+
+.chapter-lessons-container {
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    padding-left: 8px;
+    margin-bottom: 10px;
+    border-left: 2px solid rgba(66, 133, 244, 0.3);
+    margin-left: 10px;
+    padding-top: 6px;
+}
+.chapter-lessons-container.open { display: flex; }
+
+.empty-note-sidebar {
+    padding: 8px 10px;
+    font-size: 11px;
+    color: var(--text-gray);
+    font-family: var(--font-mono);
+}
+
+.lesson-number {
+    color: var(--text-gray);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    width: 20px;
+    flex-shrink: 0;
+}
+.lesson-item.active .lesson-number {
+    color: #ffffff;
+}
+
+.lesson-vid-icon {
+    font-size: 9px;
+    color: var(--g-red);
+    background: rgba(234, 67, 53, 0.14);
+    padding: 2px 6px;
+    border-radius: 50px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.lesson-item.active .lesson-vid-icon {
+    background: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+}
+
+.quiz-sidebar-btn {
+    margin-top: 4px;
+    border: 1px dashed rgba(52, 168, 83, 0.5);
+    background: rgba(52, 168, 83, 0.08);
+    color: var(--text-dark);
+}
+.quiz-badge-icon {
+    font-size: 12px;
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+}
+.quiz-count-pill {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 50px;
+    background: rgba(52, 168, 83, 0.18);
+    color: var(--g-green);
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+.quiz-sidebar-btn.active .quiz-count-pill {
+    background: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+}
+
+.final-exam-sidebar-wrap {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+.final-exam-sidebar-btn {
+    width: 100%;
+    padding: 11px 13px;
+    border-radius: 14px;
+    color: var(--text-dark);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+    cursor: pointer;
+    gap: 8px;
+    transition: all 0.22s ease;
+}
+.final-exam-sidebar-btn:hover {
+    background: var(--glass-bg-hover);
+    transform: translateY(-1px);
+}
+.final-exam-sidebar-btn.active {
+    border-color: var(--g-blue);
+    box-shadow: 0 8px 20px rgba(66, 133, 244, 0.18);
+}
+.final-exam-info-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+.final-exam-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    background: rgba(66, 133, 244, 0.14);
+    display: grid;
+    place-items: center;
+    font-size: 15px;
+    flex-shrink: 0;
+}
+.final-exam-text-wrap {
+    min-width: 0;
+}
+.final-exam-heading {
+    font-size: 11.5px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.final-exam-subtext {
+    font-size: 9.5px;
+    font-family: var(--font-mono);
+    color: var(--text-gray);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.final-exam-arrow {
+    flex-shrink: 0;
+}
+
+/* Center Content & Reading Frame */
+.content {
+    min-width: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+.content-scroll {
+    flex: 1;
+    height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    padding: clamp(16px, 3.5vw, 36px) clamp(12px, 3vw, 48px) 70px;
+}
+.breadcrumbs {
+    max-width: 860px;
+    margin: 0 auto 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    color: var(--text-gray);
+    font-size: 0.74rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.breadcrumbs strong {
+    color: var(--text-dark);
+}
+
+.lesson-page {
+    max-width: 860px;
+    width: 100%;
+    margin: 0 auto;
+    padding: clamp(20px, 4vw, 42px);
+    border-radius: clamp(18px, 3vw, 28px);
+}
+.lesson-tag {
+    display: inline-flex;
+    padding: 5px 12px;
+    border-radius: 50px;
+    color: var(--g-blue);
+    background: rgba(66, 133, 244, 0.12);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.7px;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+}
+.lesson-page h1 {
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 3.8vw, 2.5rem);
+    line-height: 1.18;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 20px;
+    word-break: break-word;
+}
+.content-body {
+    font-size: clamp(0.92rem, 1.3vw, 1rem);
+    line-height: 1.8;
+    color: var(--text-dark);
+    word-break: break-word;
+}
+.content-body h2 {
+    font-family: var(--font-display);
+    font-size: clamp(1.25rem, 2.4vw, 1.45rem);
+    margin: 28px 0 10px;
+}
+.content-body h3 {
+    font-family: var(--font-display);
+    font-size: clamp(1.1rem, 2vw, 1.2rem);
+    margin: 20px 0 8px;
+}
+
+.content-body p {
+    margin: 0 0 16px;
+    color: var(--text-dark);
+    white-space: pre-line;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+.content-body img, .article-block img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 20px auto;
+    border-radius: 14px;
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+}
+
+/* Video Player Card */
+.video-player-card {
+    margin: 22px 0;
+    border-radius: 18px;
+    overflow: hidden;
+    width: 100%;
+}
+.video-player-bar {
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.45);
+    border-bottom: 1px solid var(--glass-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--text-gray);
+    flex-wrap: wrap;
+}
+html[data-theme="dark"] .video-player-bar {
+    background: rgba(255, 255, 255, 0.04);
+}
+.video-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-dark);
+}
+.video-pulse-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--g-red);
+    box-shadow: 0 0 8px var(--g-red);
+    flex-shrink: 0;
+}
+.video-server-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.srv-btn {
+    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.65);
+    color: var(--text-dark);
+    padding: 6px 11px;
+    border-radius: 50px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+html[data-theme="dark"] .srv-btn {
+    background: rgba(255, 255, 255, 0.08);
+}
+.srv-btn.primary-play {
+    background: var(--g-blue);
+    color: #ffffff;
+    border-color: var(--g-blue);
+}
+.video-frame-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #0b0d11;
+}
+.video-frame-container iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+.video-poster-facade {
+    position: absolute;
+    inset: 0;
+    cursor: pointer;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.video-poster-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    filter: brightness(0.85);
+    transition: transform 0.4s ease, filter 0.3s ease;
+}
+.video-poster-facade:hover .video-poster-img {
+    transform: scale(1.02);
+    filter: brightness(0.95);
+}
+.video-poster-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: radial-gradient(circle, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 100%);
+    padding: 14px;
+    text-align: center;
+}
+.video-play-circle {
+    width: clamp(52px, 8vw, 64px);
+    height: clamp(52px, 8vw, 64px);
+    border-radius: 50%;
+    background: var(--g-blue);
+    color: #ffffff;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 10px 28px rgba(66, 133, 244, 0.5);
+    transition: transform 0.25s ease;
+}
+.video-poster-facade:hover .video-play-circle {
+    transform: scale(1.06);
+}
+.video-play-caption {
+    font-size: clamp(0.7rem, 1.4vw, 0.78rem);
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 0.5px;
+    padding: 5px 12px;
+    border-radius: 50px;
+    background: rgba(20, 22, 26, 0.8);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Assessment & Interactive Cards */
+.lesson-assessment-cta {
+    margin-top: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.assessment-banner-card {
+    padding: 18px 20px;
+    border-radius: 18px;
+    border: 1px solid rgba(52, 168, 83, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+.assessment-banner-card.final {
+    border-color: rgba(66, 133, 244, 0.4);
+}
+.assessment-text-area {
+    flex: 1;
+    min-width: min(100%, 260px);
+}
+.assessment-kicker {
+    font-size: 0.7rem;
+    color: var(--g-green);
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+.assessment-title {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+.assessment-meta {
+    font-size: 0.8rem;
+    color: var(--text-gray);
+    margin-top: 3px;
+}
+.cta-btn {
+    white-space: nowrap;
+    align-self: center;
+}
+
+/* Quiz Presentation */
+.quiz-top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.quiz-main-heading {
+    margin-top: 12px;
+    font-size: clamp(1.4rem, 3.2vw, 2.1rem);
+}
+.quiz-telemetry-strip {
+    margin: 14px 0 24px;
+    padding: 10px 14px;
+    border-radius: 14px;
+    border: 1px solid var(--glass-border);
+    background: rgba(66, 133, 244, 0.07);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    color: var(--text-gray);
+    align-items: center;
+}
+.quiz-telemetry-strip strong {
+    color: var(--g-blue);
+}
+.sep-slash {
+    opacity: 0.4;
+}
+
+.quiz-questions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.quiz-question-card {
+    padding: clamp(16px, 3vw, 24px);
+    border-radius: 18px;
+    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.48);
+}
+html[data-theme="dark"] .quiz-question-card {
+    background: rgba(255, 255, 255, 0.04);
+}
+.quiz-question-card.graded-correct {
+    border-color: var(--g-green);
+}
+.quiz-question-card.graded-wrong {
+    border-color: var(--g-red);
+}
+.quiz-q-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    color: var(--text-gray);
+    margin-bottom: 10px;
+}
+.quiz-q-num {
+    font-weight: 700;
+    color: var(--g-blue);
+}
+.quiz-q-pts {
+    padding: 3px 8px;
+    border-radius: 50px;
+    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.5);
+}
+html[data-theme="dark"] .quiz-q-pts {
+    background: rgba(255, 255, 255, 0.08);
+}
+.quiz-q-text {
+    font-family: var(--font-display);
+    font-size: clamp(1rem, 2vw, 1.12rem);
+    font-weight: 600;
+    line-height: 1.5;
+    margin-bottom: 14px;
+    word-break: break-word;
+}
+.quiz-options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+    gap: 10px;
+}
+.quiz-option-btn {
+    padding: 10px 12px;
+    border-radius: 14px;
+    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.65);
+    color: var(--text-dark);
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 0.88rem;
+    font-weight: 500;
+    line-height: 1.4;
+    transition: all 0.18s ease;
+    min-height: 44px;
+    word-break: break-word;
+}
+html[data-theme="dark"] .quiz-option-btn {
+    background: rgba(255, 255, 255, 0.06);
+}
+.quiz-option-btn:hover:not(:disabled) {
+    border-color: var(--g-blue);
+    transform: translateY(-1px);
+}
+.opt-letter {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: rgba(66, 133, 244, 0.12);
+    color: var(--g-blue);
+    display: grid;
+    place-items: center;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.opt-text {
+    flex: 1;
+}
+.quiz-option-btn.selected {
+    border-color: var(--g-blue) !important;
+    background: rgba(66, 133, 244, 0.15);
+}
+.quiz-option-btn.selected .opt-letter {
+    background: var(--g-blue);
+    color: #ffffff;
+}
+.quiz-option-btn.correct-option {
+    border-color: var(--g-green) !important;
+    background: rgba(52, 168, 83, 0.16);
+}
+.quiz-option-btn.correct-option .opt-letter {
+    background: var(--g-green);
+    color: #ffffff;
+}
+.quiz-option-btn.wrong-option {
+    border-color: var(--g-red) !important;
+    background: rgba(234, 67, 53, 0.16);
+}
+.quiz-option-btn.wrong-option .opt-letter {
+    background: var(--g-red);
+    color: #ffffff;
+}
+.quiz-feedback-box {
+    margin-top: 12px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    line-height: 1.5;
+}
+.quiz-feedback-box.ok {
+    background: rgba(52, 168, 83, 0.12);
+    border: 1px solid rgba(52, 168, 83, 0.4);
+    color: var(--g-green);
+}
+.quiz-feedback-box.err {
+    background: rgba(234, 67, 53, 0.12);
+    border: 1px solid rgba(234, 67, 53, 0.4);
+    color: var(--g-red);
+}
+.quiz-explanation-text {
+    margin-top: 4px;
+    font-weight: 400;
+    color: var(--text-dark);
+}
+
+.quiz-submit-footer {
+    margin-top: 26px;
+    padding: 18px 20px;
+    border-radius: 18px;
+    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+html[data-theme="dark"] .quiz-submit-footer {
+    background: rgba(255, 255, 255, 0.05);
+}
+.quiz-submit-info {
+    font-size: 0.85rem;
+    color: var(--text-gray);
+    flex: 1;
+    min-width: min(100%, 200px);
+}
+.submit-final-btn {
+    white-space: nowrap;
+}
+
+/* Score Card */
+.score-result-card {
+    margin-bottom: 24px;
+    padding: clamp(18px, 3vw, 26px);
+    border-radius: 20px;
+    border: 2px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.65);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+html[data-theme="dark"] .score-result-card {
+    background: rgba(255, 255, 255, 0.06);
+}
+.score-result-card.passed { border-color: var(--g-green); }
+.score-result-card.failed { border-color: var(--g-red); }
+
+.score-circle-box {
+    width: clamp(110px, 18vw, 135px);
+    height: clamp(110px, 18vw, 135px);
+    border-radius: 50%;
+    border: 3px solid var(--glass-border);
+    background: var(--glass-solid);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    flex-shrink: 0;
+}
+.score-result-card.passed .score-circle-box {
+    border-color: var(--g-green);
+    box-shadow: 0 8px 24px rgba(52, 168, 83, 0.22);
+}
+.score-result-card.failed .score-circle-box {
+    border-color: var(--g-red);
+    box-shadow: 0 8px 24px rgba(234, 67, 53, 0.22);
+}
+.score-big-number {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 4vw, 2.4rem);
+    font-weight: 700;
+    line-height: 1;
+}
+.score-out-of {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--text-gray);
+    margin-top: 4px;
+    letter-spacing: 0.8px;
+}
+.score-details-box {
+    flex: 1;
+    min-width: min(100%, 250px);
+}
+.score-status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 50px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+.score-result-card.passed .score-status-badge {
+    color: var(--g-green);
+    background: rgba(52, 168, 83, 0.14);
+}
+.score-result-card.failed .score-status-badge {
+    color: var(--g-red);
+    background: rgba(234, 67, 53, 0.14);
+}
+.score-details-box h3 {
+    font-family: var(--font-display);
+    font-size: clamp(1.2rem, 2.4vw, 1.45rem);
+    margin-bottom: 6px;
+}
+.score-details-box p {
+    font-size: 0.9rem;
+    color: var(--text-gray);
+    line-height: 1.6;
+}
+.score-action-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+/* Code & Pre Blocks */
+.content-body code {
+    font-family: var(--font-mono);
+    background: rgba(66, 133, 244, 0.12);
+    padding: 2px 6px;
+    border-radius: 5px;
+    color: var(--g-blue);
+    font-size: 0.84rem;
+}
+.content-body pre, .article-block pre {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 16px;
+    border-radius: 14px;
+    background: #16181d;
+    border: 1px solid var(--glass-border);
+    margin: 18px 0;
+    box-shadow: var(--glass-shadow);
+    max-width: 100%;
+}
+.content-body pre code, .article-block pre code {
+    background: transparent;
+    padding: 0;
+    color: #e8eaed;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    line-height: 1.65;
+}
+
+.article-block {
+    margin-top: 28px;
+    padding-top: 22px;
+    border-top: 1px dashed var(--border-strong);
+}
+.article-block h3 {
+    font-family: var(--font-display);
+    color: var(--g-blue);
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+}
+
+.article-block p {
+    font-size: clamp(0.9rem, 1.2vw, 0.96rem);
+    line-height: 1.78;
+    margin-bottom: 14px;
+    white-space: pre-line;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Nav & Action Buttons */
+.lesson-navigation {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 36px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+}
+.nav-button {
+    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.65);
+    color: var(--text-dark);
+    padding: 11px 16px;
+    border-radius: 50px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+}
+html[data-theme="dark"] .nav-button {
+    background: rgba(255, 255, 255, 0.08);
+}
+.nav-button:hover:not(:disabled) {
+    transform: translateY(-1px);
+    border-color: var(--g-blue);
+    color: var(--g-blue);
+}
+.nav-button.primary {
+    background: var(--g-blue);
+    color: #ffffff;
+    border-color: var(--g-blue);
+}
+.nav-button.primary:hover:not(:disabled) {
+    background: #3367d6;
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(66, 133, 244, 0.3);
+}
+.nav-button:disabled {
+    opacity: 0.32;
+    cursor: not-allowed;
+}
+
+/* Empty States & Toast */
+.empty, .empty-screen {
+    color: var(--text-gray);
+    text-align: center;
+    padding: 30px 16px;
+    font-size: 0.88rem;
+}
+.empty-screen {
+    max-width: 580px;
+    margin: 30px auto;
+    min-height: 300px;
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+.empty-screen h2 {
+    font-family: var(--font-display);
+    font-size: 1.45rem;
+    color: var(--text-dark);
+    margin-bottom: 6px;
+}
+.empty-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(66, 133, 244, 0.12);
+    color: var(--g-blue);
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+    margin-bottom: 14px;
+}
+
+.toast {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    transform: translate(-50%, 30px);
+    opacity: 0;
+    padding: 10px 18px;
+    border-radius: 50px;
+    background: var(--g-blue);
+    color: #ffffff;
+    font-size: 0.82rem;
+    font-weight: 600;
+    box-shadow: 0 8px 24px rgba(66, 133, 244, 0.35);
+    transition: 0.28s ease;
+    z-index: 600;
+    pointer-events: none;
+    max-width: 90vw;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast.error { background: var(--g-red); color: #fff; }
+
+/* =========================================================
+   04. ADAPTIVE RESPONSIVE BREAKPOINTS (FIXED SAMSUNG & MOBILE COLLISION)
+========================================================= */
+.mobile-toggle-btn { display: none; }
+.mobile-overlay { 
+    display: none;
+    position: fixed;
+    inset: 0;
+    top: 60px;
+    background: rgba(15, 17, 21, 0.45);
+    z-index: 95;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+}
+.mobile-overlay.show { opacity: 1; pointer-events: auto; }
+
+/* Tablet & Smaller Laptops (<= 1080px) */
+@media (max-width: 1080px) {
+    .main {
+        grid-template-columns: 220px 1fr 250px;
+    }
+    .header {
+        padding: 0 16px;
+    }
+}
+
+/* Mobile & Touch Viewports (<= 900px) */
+@media (max-width: 900px) {
+    .header {
+        height: 60px;
+        min-height: 60px;
+        padding: 0 12px;
+    }
+    
+    /* جلوگیری قطعی از تداخل با دکمه در تمام ابعاد گوشی */
+    .brand-sub, .live-pill {
+        display: none !important;
+    }
+    .brand-name {
+        font-size: clamp(0.95rem, 3.8vw, 1.1rem);
+        max-width: 180px;
+    }
+    .header-actions {
+        gap: 6px;
+    }
+    .header-button {
+        padding: 6px 10px;
+        font-size: 0.74rem;
+    }
+    .mobile-toggle-btn {
+        display: inline-flex;
+        background: var(--g-blue);
+        color: #ffffff;
+        border-color: var(--g-blue);
+        flex-shrink: 0;
+    }
+    .mobile-overlay { display: block; }
+
+    .main {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    /* Courses Horizontal Top Rail */
+    .sidebar {
+        order: 1;
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--glass-border);
+        flex-shrink: 0;
+    }
+    .sidebar-inner {
+        padding: 8px 10px;
+        height: auto;
+        overflow: visible;
+    }
+    .sidebar-title { display: none; }
+    #courseList {
+        display: flex;
+        flex-direction: row;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        gap: 6px;
+        padding-bottom: 2px;
+    }
+    #courseList::-webkit-scrollbar { display: none; }
+
+    .course-item {
+        width: auto;
+        min-height: 36px;
+        flex-shrink: 0;
+        padding: 5px 12px;
+        white-space: nowrap;
+        border-radius: 50px;
+        border: 1px solid var(--glass-border);
+        margin-bottom: 0;
+        font-size: 0.78rem;
+    }
+    .course-item:hover, .course-item.active {
+        transform: none;
+    }
+    .course-icon {
+        width: 22px;
+        height: 22px;
+        font-size: 10px;
+    }
+
+    /* Drawer Side Menu */
+    .sidebar.right {
+        position: fixed;
+        top: 60px;
+        right: 0;
+        width: min(310px, 86vw);
+        height: calc(100dvh - 60px);
+        background: var(--glass-solid);
+        z-index: 100;
+        transform: translateX(105%);
+        transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+        border-left: 1px solid var(--glass-border);
+        box-shadow: -10px 0 32px rgba(0, 0, 0, 0.22);
+    }
+    .sidebar.right.open {
+        transform: translateX(0);
+    }
+    .sidebar.right .sidebar-inner {
+        padding: 16px 12px 36px;
+        height: 100%;
+        overflow-y: auto;
+    }
+
+    /* Center Content Container */
+    .content {
+        order: 2;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+    }
+    .content-scroll {
+        height: 100%;
+        overflow-y: auto;
+        padding: 14px 10px 80px;
+    }
+}
+
+/* Extra Compact Phones (<= 480px) */
+@media (max-width: 480px) {
+    .header {
+        padding: 0 10px;
+        gap: 6px;
+    }
+    .brand-name {
+        max-width: 140px;
+    }
+    .header-actions {
+        gap: 4px;
+    }
+    .header-button {
+        padding: 6px 8px;
+        font-size: 0.72rem;
+    }
+    .lesson-page {
+        padding: 16px 12px;
+        border-radius: 16px;
+    }
+    .assessment-banner-card {
+        padding: 14px;
+    }
+    .assessment-title {
+        font-size: 1rem;
+    }
+    .cta-btn {
+        width: 100%;
+    }
+    .quiz-options-grid {
+        grid-template-columns: 1fr;
+    }
+    .score-result-card {
+        flex-direction: column;
+        text-align: center;
+        padding: 16px;
+    }
+    .score-details-box {
+        text-align: center;
+    }
+    .score-action-row {
+        justify-content: center;
+    }
+    .quiz-submit-footer {
+        flex-direction: column;
+        text-align: center;
+    }
+    .submit-final-btn {
+        width: 100%;
+    }
+    .lesson-navigation {
+        gap: 8px;
+    }
+    .nav-button {
+        padding: 10px 8px;
+        font-size: 0.74rem;
+    }
+}
+
+/* Very Small Screens (<= 360px) */
+@media (max-width: 360px) {
+    .logo-dots {
+        display: none;
+    }
+    .brand-name {
+        max-width: 110px;
+        font-size: 0.9rem;
+    }
+    .header-button {
+        padding: 5px 6px;
+        font-size: 0.68rem;
+    }
+}
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(150, 155, 165, 0.35); border-radius: 20px; }
+</style>
+</head>
+<body>
+
+<!-- Ambient Glass Background Blobs -->
+<div class="ambient-bg">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+    <div class="blob blob-4"></div>
+</div>
+
+<div id="mobileOverlay" class="mobile-overlay" onclick="window.toggleMobileMenu()"></div>
+
+<div class="app">
+    <header class="header">
+        <div class="brand">
+            <div class="logo-dots">
+                <div class="dot dot-blue"></div>
+                <div class="dot dot-red"></div>
+                <div class="dot dot-yellow"></div>
+                <div class="dot dot-green"></div>
+            </div>
+            <span class="brand-name">Yashar Kamran</span>
+            <span class="brand-sub">Learning Studio</span>
+            <span class="live-pill"><span class="live-dot"></span> LIVE DB</span>
+        </div>
+        <div class="header-actions">
+            <button class="header-button mobile-toggle-btn" onclick="window.toggleMobileMenu()">📑 Chapters</button>
+            <button class="header-button" onclick="toggleSurfaceTheme()">◐ Tone</button>
+            <button class="header-button" onclick="location.href='index.html'">← Main Site</button>
+        </div>
+    </header>
+
+    <main class="main">
+        <!-- Left Sidebar: Courses -->
+        <aside class="sidebar">
+            <div class="sidebar-inner">
+                <div class="sidebar-title">01 // Courses</div>
+                <div id="courseList"></div>
+            </div>
+        </aside>
+
+        <!-- Center: Lesson / Quiz / Final Exam Content -->
+        <section class="content">
+            <div class="content-scroll" id="lessonContent">
+                <div class="empty-screen glass">
+                    <div class="empty-icon">◈</div>
+                    <h2>Welcome to Learning</h2>
+                    <p>Select a course above or on the left to inspect chapters, notes, videos, quizzes, and lab code.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Sidebar: Accordion Chapters, Lessons, Quizzes & Final Exam -->
+        <aside class="sidebar right">
+            <div class="sidebar-inner">
+                <div class="sidebar-title">02 // Contents</div>
+                <div id="lessonList"></div>
+            </div>
+        </aside>
+    </main>
+</div>
+
+<div id="toast" class="toast"></div>
+
+</body>
+</html>

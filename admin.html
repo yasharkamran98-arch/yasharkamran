@@ -1,0 +1,2271 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+<title>The Keyword | Admin Studio — Yashar Kamran</title>
+
+<!-- Fonts: Inter, Outfit, JetBrains Mono -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Material Icons -->
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { 
+    getAuth, 
+    signInWithEmailAndPassword, 
+    signOut, 
+    onAuthStateChanged 
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { 
+    getFirestore, 
+    collection, 
+    doc, 
+    addDoc, 
+    updateDoc, 
+    deleteDoc, 
+    query, 
+    orderBy, 
+    onSnapshot, 
+    serverTimestamp 
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+/* =========================================================
+   1. FIREBASE CONFIG (yasharkamran-ce30f)
+========================================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyA0gDMEwjQwFBivTTAZvZWBbHmYqImLvZk",
+  authDomain: "yasharkamran-ce30f.firebaseapp.com",
+  projectId: "yasharkamran-ce30f",
+  storageBucket: "yasharkamran-ce30f.firebasestorage.app",
+  messagingSenderId: "779918861498",
+  appId: "1:779918861498:web:53c9a96736526e10ee4e83",
+  measurementId: "G-2BJ55Z1LV0"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* =========================================================
+   HELPER: EXTRACT YOUTUBE EMBED URL
+========================================================= */
+window.getYouTubeEmbedUrl = function(url) {
+    if (!url) return null;
+    const regExp = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
+    const match = String(url).match(regExp);
+    return (match && match[1]) ? `https://www.youtube.com/embed/${match[1]}?rel=0` : null;
+};
+
+window.previewYouTubeInput = function(inputId, previewBoxId) {
+    const val = document.getElementById(inputId).value.trim();
+    const box = document.getElementById(previewBoxId);
+    const embedUrl = window.getYouTubeEmbedUrl(val);
+    if (embedUrl) {
+        box.style.display = "block";
+        box.innerHTML = `<iframe src="${embedUrl}" title="YouTube preview" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
+    } else {
+        box.style.display = "none";
+        box.innerHTML = "";
+    }
+};
+
+/* =========================================================
+   2. GLOBAL STATE & PAGE NAVIGATION
+========================================================= */
+let courses = [];
+let chapters = [];
+let lessons = [];
+let articles = [];
+let chapterQuizzes = [];
+let finalExams = [];
+
+let selectedCourseId = "";
+let selectedChapterId = "";
+let selectedLessonId = "";
+let selectedArticleId = "";
+let selectedChapterQuizId = "";
+let selectedFinalExamId = "";
+let currentStepPage = 1;
+
+let unsubCourses = null;
+let unsubChapters = null;
+let unsubLessons = null;
+let unsubArticles = null;
+let unsubChapterQuiz = null;
+let unsubFinalExam = null;
+
+window.goToPage = function(pageNumber) {
+    if (pageNumber === 2 && !selectedCourseId) {
+        return showToast("First select a Course on Page 01!", "error");
+    }
+    if (pageNumber === 3 && (!selectedCourseId || !selectedChapterId)) {
+        return showToast("First select a Chapter on Page 02!", "error");
+    }
+    if (pageNumber === 4 && (!selectedCourseId || !selectedChapterId || !selectedLessonId)) {
+        return showToast("First select a Lesson on Page 03!", "error");
+    }
+    if (pageNumber === 5 && (!selectedCourseId || !selectedChapterId)) {
+        return showToast("First select a Course & Chapter for Quiz!", "error");
+    }
+    if (pageNumber === 6 && !selectedCourseId) {
+        return showToast("First select a Course for Final Exam!", "error");
+    }
+
+    currentStepPage = pageNumber;
+    document.querySelectorAll(".step-page").forEach((sec, idx) => {
+        sec.classList.toggle("active", idx + 1 === pageNumber);
+    });
+    document.querySelectorAll(".step-tab").forEach((tab, idx) => {
+        tab.classList.toggle("active", idx + 1 === pageNumber);
+    });
+    updateBreadcrumbs();
+};
+
+function updateBreadcrumbs() {
+    const courseObj = courses.find(c => c.id === selectedCourseId);
+    const chapObj = chapters.find(ch => ch.id === selectedChapterId);
+    const lessObj = lessons.find(l => l.id === selectedLessonId);
+
+    document.getElementById("crumbCourse").textContent = courseObj ? courseObj.title : "None";
+    document.getElementById("crumbChapter").textContent = chapObj ? chapObj.title : "None";
+    document.getElementById("crumbLesson").textContent = lessObj ? lessObj.title : "None";
+
+    document.querySelectorAll(".selected-course-name").forEach(el => {
+        el.textContent = courseObj ? courseObj.title : "—";
+    });
+    document.querySelectorAll(".selected-chapter-name").forEach(el => {
+        el.textContent = chapObj ? chapObj.title : "—";
+    });
+    document.querySelectorAll(".selected-lesson-name").forEach(el => {
+        el.textContent = lessObj ? lessObj.title : "—";
+    });
+}
+
+/* =========================================================
+   3. AUTHENTICATION
+========================================================= */
+onAuthStateChanged(auth, user => {
+    const loginScreen = document.getElementById("loginScreen");
+    const adminDashboard = document.getElementById("adminDashboard");
+    const adminEmailBadge = document.getElementById("adminEmailBadge");
+
+    if (user) {
+        loginScreen.style.display = "none";
+        adminDashboard.style.display = "flex";
+        adminEmailBadge.textContent = user.email;
+        startCoursesListener();
+    } else {
+        loginScreen.style.display = "flex";
+        adminDashboard.style.display = "none";
+        if (unsubCourses) unsubCourses();
+    }
+});
+
+window.handleLogin = async function(e) {
+    e.preventDefault();
+    const email = document.getElementById("loginEmail").value.trim();
+    const pass = document.getElementById("loginPassword").value;
+    const btn = document.getElementById("loginBtn");
+
+    btn.textContent = "AUTHENTICATING...";
+    btn.disabled = true;
+
+    try {
+        await signInWithEmailAndPassword(auth, email, pass);
+        showToast("Welcome back, Yashar!");
+    } catch (err) {
+        console.error(err);
+        showToast("Login failed: Check credentials.", "error");
+    } finally {
+        btn.textContent = "UNLOCK ADMIN STUDIO →";
+        btn.disabled = false;
+    }
+};
+
+window.handleLogout = async function() {
+    await signOut(auth);
+    showToast("Signed out safely.");
+};
+
+/* =========================================================
+   4. LISTENERS
+========================================================= */
+function startCoursesListener() {
+    if (unsubCourses) unsubCourses();
+    const q = query(collection(db, "courses"), orderBy("createdAt", "asc"));
+    unsubCourses = onSnapshot(q, snap => {
+        courses = [];
+        snap.forEach(d => courses.push({ id: d.id, ...d.data() }));
+        renderCoursesList();
+
+        if (selectedCourseId && !courses.some(c => c.id === selectedCourseId)) {
+            selectedCourseId = "";
+            selectedChapterId = "";
+            selectedLessonId = "";
+        }
+        if (!selectedCourseId && courses.length > 0) {
+            selectCourse(courses[0].id, 0);
+        }
+        updateBreadcrumbs();
+    }, err => {
+        console.error(err);
+        showToast("Firestore read error.", "error");
+    });
+}
+
+window.selectCourse = function(courseId, jumpToPage = 0) {
+    selectedCourseId = courseId;
+    selectedChapterId = "";
+    selectedLessonId = "";
+    selectedArticleId = "";
+    selectedChapterQuizId = "";
+    selectedFinalExamId = "";
+    chapters = [];
+    lessons = [];
+    articles = [];
+    chapterQuizzes = [];
+    finalExams = [];
+
+    clearCourseForm();
+    clearChapterForm();
+    clearLessonForm();
+    clearArticleForm();
+    clearChapterQuizForm();
+    clearFinalExamForm();
+
+    renderCoursesList();
+    renderChaptersList();
+    renderLessonsList();
+    renderArticlesList();
+    renderChapterQuizList();
+    renderFinalExamList();
+    updateBreadcrumbs();
+
+    if (unsubChapters) unsubChapters();
+    if (unsubFinalExam) unsubFinalExam();
+    if (!courseId) return;
+
+    const qChap = query(collection(db, "courses", courseId, "chapters"), orderBy("createdAt", "asc"));
+    unsubChapters = onSnapshot(qChap, snap => {
+        chapters = [];
+        snap.forEach(d => chapters.push({ id: d.id, ...d.data() }));
+        renderChaptersList();
+
+        if (!selectedChapterId && chapters.length > 0) {
+            selectChapter(chapters[0].id, 0);
+        } else if (!chapters.length) {
+            selectedChapterId = "";
+            lessons = [];
+            chapterQuizzes = [];
+            renderLessonsList();
+            renderChapterQuizList();
+            updateBreadcrumbs();
+        }
+    });
+
+    const qFinal = query(collection(db, "courses", courseId, "finalExam"), orderBy("createdAt", "asc"));
+    unsubFinalExam = onSnapshot(qFinal, snap => {
+        finalExams = [];
+        snap.forEach(d => finalExams.push({ id: d.id, ...d.data() }));
+        renderFinalExamList();
+    });
+
+    if (jumpToPage > 0) {
+        window.goToPage(jumpToPage);
+    }
+};
+
+window.selectChapter = function(chapterId, jumpToPage = 0) {
+    selectedChapterId = chapterId;
+    selectedLessonId = "";
+    selectedArticleId = "";
+    selectedChapterQuizId = "";
+    lessons = [];
+    articles = [];
+    chapterQuizzes = [];
+
+    clearChapterForm();
+    clearLessonForm();
+    clearArticleForm();
+    clearChapterQuizForm();
+
+    renderChaptersList();
+    renderLessonsList();
+    renderArticlesList();
+    renderChapterQuizList();
+    updateBreadcrumbs();
+
+    if (unsubLessons) unsubLessons();
+    if (unsubChapterQuiz) unsubChapterQuiz();
+    if (!selectedCourseId || !chapterId) return;
+
+    const qLess = query(collection(db, "courses", selectedCourseId, "chapters", chapterId, "lessons"), orderBy("createdAt", "asc"));
+    unsubLessons = onSnapshot(qLess, snap => {
+        lessons = [];
+        snap.forEach(d => lessons.push({ id: d.id, ...d.data() }));
+        renderLessonsList();
+
+        if (!selectedLessonId && lessons.length > 0) {
+            selectLesson(lessons[0].id, 0);
+        } else if (!lessons.length) {
+            selectedLessonId = "";
+            clearLessonForm();
+            articles = [];
+            renderArticlesList();
+            updateBreadcrumbs();
+        }
+    });
+
+    const qQuiz = query(collection(db, "courses", selectedCourseId, "chapters", chapterId, "quiz"), orderBy("createdAt", "asc"));
+    unsubChapterQuiz = onSnapshot(qQuiz, snap => {
+        chapterQuizzes = [];
+        snap.forEach(d => chapterQuizzes.push({ id: d.id, ...d.data() }));
+        renderChapterQuizList();
+    });
+
+    if (jumpToPage > 0) {
+        window.goToPage(jumpToPage);
+    }
+};
+
+window.selectLesson = function(lessonId, jumpToPage = 0) {
+    selectedLessonId = lessonId;
+    selectedArticleId = "";
+    clearArticleForm();
+    renderLessonsList();
+    updateBreadcrumbs();
+
+    const lessonObj = lessons.find(l => l.id === lessonId);
+    if (lessonObj) {
+        document.getElementById("lessonTitle").value = lessonObj.title || "";
+        document.getElementById("lessonContent").value = lessonObj.content || "";
+        document.getElementById("lessonCode").value = lessonObj.code || "";
+        document.getElementById("lessonImage").value = lessonObj.image || "";
+        document.getElementById("lessonVideo").value = lessonObj.video || "";
+        window.previewYouTubeInput("lessonVideo", "lessonVideoPreview");
+
+        document.getElementById("lessonFormMode").textContent = "EDIT LESSON / RENAME: " + lessonObj.title;
+        document.getElementById("btnUpdateLesson").style.display = "inline-flex";
+    }
+
+    if (unsubArticles) unsubArticles();
+    if (!selectedCourseId || !selectedChapterId || !lessonId) return;
+
+    const q = query(collection(db, "courses", selectedCourseId, "chapters", selectedChapterId, "lessons", lessonId, "articles"), orderBy("createdAt", "asc"));
+    unsubArticles = onSnapshot(q, snap => {
+        articles = [];
+        snap.forEach(d => articles.push({ id: d.id, ...d.data() }));
+        renderArticlesList();
+    });
+
+    if (jumpToPage > 0) {
+        window.goToPage(jumpToPage);
+    }
+};
+
+/* =========================================================
+   5. CRUD ACTIONS WITH RENAME / EDIT CAPABILITY
+========================================================= */
+
+// --- 5.1 COURSE (CREATE & RENAME) ---
+let editingCourseId = "";
+
+window.clearCourseForm = function() {
+    editingCourseId = "";
+    document.getElementById("courseTitle").value = "";
+    document.getElementById("courseIcon").value = "◈";
+    document.getElementById("courseFormMode").textContent = "CREATE NEW COURSE";
+    document.getElementById("btnSubmitCourse").textContent = "+ CREATE COURSE";
+    document.getElementById("btnCancelCourseEdit").style.display = "none";
+};
+
+window.editCourseRename = function(courseId, e) {
+    if (e) e.stopPropagation();
+    const c = courses.find(x => x.id === courseId);
+    if (!c) return;
+
+    editingCourseId = courseId;
+    document.getElementById("courseTitle").value = c.title || "";
+    document.getElementById("courseIcon").value = c.icon || "◈";
+    document.getElementById("courseFormMode").textContent = "RENAME / EDIT COURSE";
+    document.getElementById("btnSubmitCourse").textContent = "💾 SAVE COURSE NAME";
+    document.getElementById("btnCancelCourseEdit").style.display = "inline-flex";
+};
+
+window.handleCourseSubmit = async function(e) {
+    e.preventDefault();
+    const title = document.getElementById("courseTitle").value.trim();
+    const icon = document.getElementById("courseIcon").value.trim() || "◈";
+    if (!title) return;
+
+    try {
+        if (editingCourseId) {
+            await updateDoc(doc(db, "courses", editingCourseId), { title, icon });
+            showToast("Course renamed successfully!");
+            clearCourseForm();
+        } else {
+            const ref = await addDoc(collection(db, "courses"), {
+                title,
+                icon,
+                createdAt: serverTimestamp()
+            });
+            clearCourseForm();
+            showToast("Course created!");
+            selectCourse(ref.id, 0);
+        }
+    } catch (err) {
+        console.error(err);
+        showToast("Course save failed.", "error");
+    }
+};
+
+window.deleteCourse = async function(courseId, e) {
+    if (e) e.stopPropagation();
+    if (!confirm("Delete this course and all its contents?")) return;
+    try {
+        await deleteDoc(doc(db, "courses", courseId));
+        if (editingCourseId === courseId) clearCourseForm();
+        showToast("Course deleted.");
+    } catch (err) {
+        showToast("Delete error.", "error");
+    }
+};
+
+// --- 5.2 CHAPTER (CREATE & RENAME) ---
+let editingChapterId = "";
+
+window.clearChapterForm = function() {
+    editingChapterId = "";
+    document.getElementById("chapterTitle").value = "";
+    document.getElementById("chapterFormMode").textContent = "ADD CHAPTER";
+    document.getElementById("btnSubmitChapter").textContent = "+ ADD CHAPTER TO COURSE";
+    document.getElementById("btnCancelChapterEdit").style.display = "none";
+};
+
+window.editChapterRename = function(chapterId, e) {
+    if (e) e.stopPropagation();
+    const ch = chapters.find(x => x.id === chapterId);
+    if (!ch) return;
+
+    editingChapterId = chapterId;
+    document.getElementById("chapterTitle").value = ch.title || "";
+    document.getElementById("chapterFormMode").textContent = "RENAME CHAPTER";
+    document.getElementById("btnSubmitChapter").textContent = "💾 SAVE CHAPTER NAME";
+    document.getElementById("btnCancelChapterEdit").style.display = "inline-flex";
+};
+
+window.handleChapterSubmit = async function(e) {
+    e.preventDefault();
+    if (!selectedCourseId) return showToast("Select a Course first!", "error");
+    const title = document.getElementById("chapterTitle").value.trim();
+    if (!title) return;
+
+    try {
+        if (editingChapterId) {
+            await updateDoc(doc(db, "courses", selectedCourseId, "chapters", editingChapterId), { title });
+            showToast("Chapter renamed successfully!");
+            clearChapterForm();
+        } else {
+            const ref = await addDoc(collection(db, "courses", selectedCourseId, "chapters"), {
+                title,
+                createdAt: serverTimestamp()
+            });
+            clearChapterForm();
+            showToast("Chapter added!");
+            selectChapter(ref.id, 0);
+        }
+    } catch (err) {
+        showToast("Error saving chapter.", "error");
+    }
+};
+
+window.deleteChapter = async function(chapterId, e) {
+    if (e) e.stopPropagation();
+    if (!confirm("Delete this chapter?")) return;
+    try {
+        await deleteDoc(doc(db, "courses", selectedCourseId, "chapters", chapterId));
+        if (editingChapterId === chapterId) clearChapterForm();
+        showToast("Chapter deleted.");
+    } catch (err) {
+        showToast("Error deleting chapter.", "error");
+    }
+};
+
+// --- 5.3 LESSON (CREATE & EDIT/RENAME) ---
+window.clearLessonForm = function() {
+    document.getElementById("lessonTitle").value = "";
+    document.getElementById("lessonContent").value = "";
+    document.getElementById("lessonCode").value = "";
+    document.getElementById("lessonImage").value = "";
+    document.getElementById("lessonVideo").value = "";
+    window.previewYouTubeInput("lessonVideo", "lessonVideoPreview");
+
+    document.getElementById("lessonFormMode").textContent = "CREATE NEW LESSON";
+    document.getElementById("btnUpdateLesson").style.display = "none";
+};
+
+window.addNewLesson = async function(e) {
+    e.preventDefault();
+    if (!selectedCourseId || !selectedChapterId) {
+        return showToast("Select a Course and Chapter first!", "error");
+    }
+    const title = document.getElementById("lessonTitle").value.trim();
+    const content = document.getElementById("lessonContent").value.trim();
+    const code = document.getElementById("lessonCode").value.trim();
+    const image = document.getElementById("lessonImage").value.trim();
+    const video = document.getElementById("lessonVideo").value.trim();
+    if (!title) return;
+
+    try {
+        const ref = await addDoc(collection(db, "courses", selectedCourseId, "chapters", selectedChapterId, "lessons"), {
+            title,
+            content,
+            code,
+            image,
+            video,
+            createdAt: serverTimestamp()
+        });
+        showToast("New lesson published!");
+        selectLesson(ref.id, 0);
+    } catch (err) {
+        showToast("Error publishing lesson.", "error");
+    }
+};
+
+window.updateSelectedLesson = async function() {
+    if (!selectedCourseId || !selectedChapterId || !selectedLessonId) return;
+    const title = document.getElementById("lessonTitle").value.trim();
+    const content = document.getElementById("lessonContent").value.trim();
+    const code = document.getElementById("lessonCode").value.trim();
+    const image = document.getElementById("lessonImage").value.trim();
+    const video = document.getElementById("lessonVideo").value.trim();
+
+    try {
+        await updateDoc(doc(db, "courses", selectedCourseId, "chapters", selectedChapterId, "lessons", selectedLessonId), {
+            title,
+            content,
+            code,
+            image,
+            video
+        });
+        showToast("Lesson renamed & saved!");
+    } catch (err) {
+        showToast("Error updating lesson.", "error");
+    }
+};
+
+window.deleteLesson = async function(lessonId, e) {
+    if (e) e.stopPropagation();
+    if (!confirm("Delete this lesson?")) return;
+    try {
+        await deleteDoc(doc(db, "courses", selectedCourseId, "chapters", selectedChapterId, "lessons", lessonId));
+        if (selectedLessonId === lessonId) clearLessonForm();
+        showToast("Lesson deleted.");
+    } catch (err) {
+        showToast("Error deleting lesson.", "error");
+    }
+};
+
+// --- 5.4 ARTICLE / EXTRA SECTION (CREATE & EDIT/RENAME) ---
+window.clearArticleForm = function() {
+    selectedArticleId = "";
+    document.getElementById("articleTitle").value = "";
+    document.getElementById("articleContent").value = "";
+    document.getElementById("articleCode").value = "";
+    document.getElementById("articleImage").value = "";
+    document.getElementById("articleVideo").value = "";
+    window.previewYouTubeInput("articleVideo", "articleVideoPreview");
+    document.getElementById("articleFormMode").textContent = "APPEND EXTRA SECTION";
+    document.getElementById("btnSubmitArticle").textContent = "+ APPEND SECTION TO LESSON";
+    document.getElementById("btnCancelArticleEdit").style.display = "none";
+};
+
+window.editArticleRename = function(articleId) {
+    const art = articles.find(a => a.id === articleId);
+    if (!art) return;
+
+    selectedArticleId = articleId;
+    document.getElementById("articleTitle").value = art.title || "";
+    document.getElementById("articleContent").value = art.content || "";
+    document.getElementById("articleCode").value = art.code || "";
+    document.getElementById("articleImage").value = art.image || "";
+    document.getElementById("articleVideo").value = art.video || "";
+    window.previewYouTubeInput("articleVideo", "articleVideoPreview");
+
+    document.getElementById("articleFormMode").textContent = "EDIT / RENAME SECTION";
+    document.getElementById("btnSubmitArticle").textContent = "💾 SAVE SECTION CHANGES";
+    document.getElementById("btnCancelArticleEdit").style.display = "inline-flex";
+};
+
+window.handleArticleSubmit = async function(e) {
+    e.preventDefault();
+    if (!selectedCourseId || !selectedChapterId || !selectedLessonId) {
+        return showToast("Select a Lesson first!", "error");
+    }
+    const title = document.getElementById("articleTitle").value.trim();
+    const content = document.getElementById("articleContent").value.trim();
+    const code = document.getElementById("articleCode").value.trim();
+    const image = document.getElementById("articleImage").value.trim();
+    const video = document.getElementById("articleVideo").value.trim();
+    if (!title) return;
+
+    try {
+        if (selectedArticleId) {
+            await updateDoc(doc(db, "courses", selectedCourseId, "chapters", selectedChapterId, "lessons", selectedLessonId, "articles", selectedArticleId), {
+                title, content, code, image, video
+            });
+            showToast("Section updated!");
+            clearArticleForm();
+        } else {
+            await addDoc(collection(db, "courses", selectedCourseId, "chapters", selectedChapterId, "lessons", selectedLessonId, "articles"), {
+                title, content, code, image, video, createdAt: serverTimestamp()
+            });
+            clearArticleForm();
+            showToast("Extra section added!");
+        }
+    } catch (err) {
+        showToast("Error saving section.", "error");
+    }
+};
+
+window.deleteArticleBlock = async function(articleId, e) {
+    if (e) e.stopPropagation();
+    if (!confirm("Remove this section?")) return;
+    try {
+        await deleteDoc(doc(db, "courses", selectedCourseId, "chapters", selectedChapterId, "lessons", selectedLessonId, "articles", articleId));
+        if (selectedArticleId === articleId) clearArticleForm();
+        showToast("Section removed.");
+    } catch (err) {
+        showToast("Error removing section.", "error");
+    }
+};
+
+// --- 5.5 CHAPTER QUIZ CRUD (CREATE & EDIT/RENAME) ---
+window.clearChapterQuizForm = function() {
+    selectedChapterQuizId = "";
+    document.getElementById("chapQuizQuestion").value = "";
+    document.getElementById("chapQuizOpt0").value = "";
+    document.getElementById("chapQuizOpt1").value = "";
+    document.getElementById("chapQuizOpt2").value = "";
+    document.getElementById("chapQuizOpt3").value = "";
+    document.getElementById("chapQuizCorrect").value = "0";
+    document.getElementById("chapQuizExplanation").value = "";
+    document.getElementById("chapQuizFormMode").textContent = "CREATE NEW CHAPTER QUIZ QUESTION";
+    document.getElementById("btnUpdateChapQuiz").style.display = "none";
+    document.getElementById("btnCancelChapQuiz").style.display = "none";
+    renderChapterQuizList();
+};
+
+window.selectChapterQuizItem = function(quizId) {
+    selectedChapterQuizId = quizId;
+    const qObj = chapterQuizzes.find(q => q.id === quizId);
+    if (!qObj) return;
+
+    const opts = Array.isArray(qObj.options) ? qObj.options : ["", "", "", ""];
+    document.getElementById("chapQuizQuestion").value = qObj.question || "";
+    document.getElementById("chapQuizOpt0").value = opts[0] || "";
+    document.getElementById("chapQuizOpt1").value = opts[1] || "";
+    document.getElementById("chapQuizOpt2").value = opts[2] || "";
+    document.getElementById("chapQuizOpt3").value = opts[3] || "";
+    document.getElementById("chapQuizCorrect").value = String(qObj.correctIndex ?? 0);
+    document.getElementById("chapQuizExplanation").value = qObj.explanation || "";
+
+    document.getElementById("chapQuizFormMode").textContent = "EDIT / RENAME QUIZ QUESTION";
+    document.getElementById("btnUpdateChapQuiz").style.display = "inline-flex";
+    document.getElementById("btnCancelChapQuiz").style.display = "inline-flex";
+    renderChapterQuizList();
+};
+
+window.addChapterQuizQuestion = async function(e) {
+    e.preventDefault();
+    if (!selectedCourseId || !selectedChapterId) {
+        return showToast("Select a Course and Chapter first!", "error");
+    }
+
+    const question = document.getElementById("chapQuizQuestion").value.trim();
+    const opt0 = document.getElementById("chapQuizOpt0").value.trim();
+    const opt1 = document.getElementById("chapQuizOpt1").value.trim();
+    const opt2 = document.getElementById("chapQuizOpt2").value.trim();
+    const opt3 = document.getElementById("chapQuizOpt3").value.trim();
+    const correctIndex = parseInt(document.getElementById("chapQuizCorrect").value, 10) || 0;
+    const explanation = document.getElementById("chapQuizExplanation").value.trim();
+
+    if (!question || !opt0 || !opt1 || !opt2 || !opt3) {
+        return showToast("Please fill the question and all 4 options!", "error");
+    }
+
+    try {
+        await addDoc(collection(db, "courses", selectedCourseId, "chapters", selectedChapterId, "quiz"), {
+            question,
+            options: [opt0, opt1, opt2, opt3],
+            correctIndex,
+            explanation,
+            createdAt: serverTimestamp()
+        });
+        clearChapterQuizForm();
+        showToast("Quiz question added!");
+    } catch (err) {
+        showToast("Error adding quiz question.", "error");
+    }
+};
+
+window.updateChapterQuizQuestion = async function() {
+    if (!selectedCourseId || !selectedChapterId || !selectedChapterQuizId) return;
+
+    const question = document.getElementById("chapQuizQuestion").value.trim();
+    const opt0 = document.getElementById("chapQuizOpt0").value.trim();
+    const opt1 = document.getElementById("chapQuizOpt1").value.trim();
+    const opt2 = document.getElementById("chapQuizOpt2").value.trim();
+    const opt3 = document.getElementById("chapQuizOpt3").value.trim();
+    const correctIndex = parseInt(document.getElementById("chapQuizCorrect").value, 10) || 0;
+    const explanation = document.getElementById("chapQuizExplanation").value.trim();
+
+    if (!question || !opt0 || !opt1 || !opt2 || !opt3) {
+        return showToast("Please fill the question and all 4 options!", "error");
+    }
+
+    try {
+        await updateDoc(doc(db, "courses", selectedCourseId, "chapters", selectedChapterId, "quiz", selectedChapterQuizId), {
+            question,
+            options: [opt0, opt1, opt2, opt3],
+            correctIndex,
+            explanation
+        });
+        showToast("Quiz question updated!");
+        clearChapterQuizForm();
+    } catch (err) {
+        showToast("Error updating quiz question.", "error");
+    }
+};
+
+window.deleteChapterQuizQuestion = async function(quizId, e) {
+    if (e) e.stopPropagation();
+    if (!confirm("Delete this quiz question?")) return;
+    try {
+        await deleteDoc(doc(db, "courses", selectedCourseId, "chapters", selectedChapterId, "quiz", quizId));
+        if (selectedChapterQuizId === quizId) clearChapterQuizForm();
+        showToast("Quiz question deleted.");
+    } catch (err) {
+        showToast("Error deleting quiz question.", "error");
+    }
+};
+
+// --- 5.6 FINAL EXAM CRUD (CREATE & EDIT/RENAME) ---
+window.clearFinalExamForm = function() {
+    selectedFinalExamId = "";
+    document.getElementById("finalExamQuestion").value = "";
+    document.getElementById("finalExamOpt0").value = "";
+    document.getElementById("finalExamOpt1").value = "";
+    document.getElementById("finalExamOpt2").value = "";
+    document.getElementById("finalExamOpt3").value = "";
+    document.getElementById("finalExamCorrect").value = "0";
+    document.getElementById("finalExamExplanation").value = "";
+    document.getElementById("finalExamFormMode").textContent = "CREATE NEW FINAL EXAM QUESTION";
+    document.getElementById("btnUpdateFinalExam").style.display = "none";
+    document.getElementById("btnCancelFinalExam").style.display = "none";
+    renderFinalExamList();
+};
+
+window.selectFinalExamItem = function(examId) {
+    selectedFinalExamId = examId;
+    const qObj = finalExams.find(q => q.id === examId);
+    if (!qObj) return;
+
+    const opts = Array.isArray(qObj.options) ? qObj.options : ["", "", "", ""];
+    document.getElementById("finalExamQuestion").value = qObj.question || "";
+    document.getElementById("finalExamOpt0").value = opts[0] || "";
+    document.getElementById("finalExamOpt1").value = opts[1] || "";
+    document.getElementById("finalExamOpt2").value = opts[2] || "";
+    document.getElementById("finalExamOpt3").value = opts[3] || "";
+    document.getElementById("finalExamCorrect").value = String(qObj.correctIndex ?? 0);
+    document.getElementById("finalExamExplanation").value = qObj.explanation || "";
+
+    document.getElementById("finalExamFormMode").textContent = "EDIT / RENAME FINAL EXAM QUESTION";
+    document.getElementById("btnUpdateFinalExam").style.display = "inline-flex";
+    document.getElementById("btnCancelFinalExam").style.display = "inline-flex";
+    renderFinalExamList();
+};
+
+window.addFinalExamQuestion = async function(e) {
+    e.preventDefault();
+    if (!selectedCourseId) return showToast("Select a Course on Page 01 first!", "error");
+
+    const question = document.getElementById("finalExamQuestion").value.trim();
+    const opt0 = document.getElementById("finalExamOpt0").value.trim();
+    const opt1 = document.getElementById("finalExamOpt1").value.trim();
+    const opt2 = document.getElementById("finalExamOpt2").value.trim();
+    const opt3 = document.getElementById("finalExamOpt3").value.trim();
+    const correctIndex = parseInt(document.getElementById("finalExamCorrect").value, 10) || 0;
+    const explanation = document.getElementById("finalExamExplanation").value.trim();
+
+    if (!question || !opt0 || !opt1 || !opt2 || !opt3) {
+        return showToast("Please fill the question and all 4 options!", "error");
+    }
+
+    try {
+        await addDoc(collection(db, "courses", selectedCourseId, "finalExam"), {
+            question,
+            options: [opt0, opt1, opt2, opt3],
+            correctIndex,
+            explanation,
+            createdAt: serverTimestamp()
+        });
+        clearFinalExamForm();
+        showToast("Final exam question added!");
+    } catch (err) {
+        showToast("Error adding exam question.", "error");
+    }
+};
+
+window.updateFinalExamQuestion = async function() {
+    if (!selectedCourseId || !selectedFinalExamId) return;
+
+    const question = document.getElementById("finalExamQuestion").value.trim();
+    const opt0 = document.getElementById("finalExamOpt0").value.trim();
+    const opt1 = document.getElementById("finalExamOpt1").value.trim();
+    const opt2 = document.getElementById("finalExamOpt2").value.trim();
+    const opt3 = document.getElementById("finalExamOpt3").value.trim();
+    const correctIndex = parseInt(document.getElementById("finalExamCorrect").value, 10) || 0;
+    const explanation = document.getElementById("finalExamExplanation").value.trim();
+
+    if (!question || !opt0 || !opt1 || !opt2 || !opt3) {
+        return showToast("Please fill the question and all 4 options!", "error");
+    }
+
+    try {
+        await updateDoc(doc(db, "courses", selectedCourseId, "finalExam", selectedFinalExamId), {
+            question,
+            options: [opt0, opt1, opt2, opt3],
+            correctIndex,
+            explanation
+        });
+        showToast("Final exam question updated!");
+        clearFinalExamForm();
+    } catch (err) {
+        showToast("Error updating exam question.", "error");
+    }
+};
+
+window.deleteFinalExamQuestion = async function(examId, e) {
+    if (e) e.stopPropagation();
+    if (!confirm("Delete this final exam question?")) return;
+    try {
+        await deleteDoc(doc(db, "courses", selectedCourseId, "finalExam", examId));
+        if (selectedFinalExamId === examId) clearFinalExamForm();
+        showToast("Final exam question deleted.");
+    } catch (err) {
+        showToast("Error deleting final exam question.", "error");
+    }
+};
+
+/* =========================================================
+   6. RENDER LISTS
+========================================================= */
+const OPTION_LETTERS = ["A", "B", "C", "D"];
+
+function renderCoursesList() {
+    const el = document.getElementById("coursesList");
+    if (!courses.length) {
+        el.innerHTML = `<div class="empty-note">No courses yet. Create your first course on the left.</div>`;
+        return;
+    }
+    el.innerHTML = courses.map(c => `
+        <div class="list-item ${c.id === selectedCourseId ? 'active' : ''}" onclick="window.selectCourse('${c.id}', 0)">
+            <div class="list-item-title">
+                <span class="badge-icon">${escapeHTML(c.icon || '◈')}</span>
+                <span style="font-weight:600;">${escapeHTML(c.title)}</span>
+            </div>
+            <div class="list-item-actions">
+                <button type="button" class="mini-btn rename-btn" onclick="window.editCourseRename('${c.id}', event)" title="Rename / Edit">✏️ Rename</button>
+                <button type="button" class="mini-btn" onclick="event.stopPropagation(); window.selectCourse('${c.id}', 2)">Chapters →</button>
+                <button type="button" class="mini-btn quiz-btn" onclick="event.stopPropagation(); window.selectCourse('${c.id}', 6)">Exam →</button>
+                <button type="button" class="del-btn" onclick="window.deleteCourse('${c.id}', event)" title="Delete">✕</button>
+            </div>
+        </div>
+    `).join("");
+}
+
+function renderChaptersList() {
+    const el = document.getElementById("chaptersList");
+    if (!selectedCourseId) {
+        el.innerHTML = `<div class="empty-note">Select a course on Page 01 first.</div>`;
+        return;
+    }
+    if (!chapters.length) {
+        el.innerHTML = `<div class="empty-note">No chapters in this course yet. Add one on the left.</div>`;
+        return;
+    }
+    el.innerHTML = chapters.map((ch, idx) => `
+        <div class="list-item ${ch.id === selectedChapterId ? 'active' : ''}" onclick="window.selectChapter('${ch.id}', 0)">
+            <div class="list-item-title">
+                <span class="num-pill">CH ${String(idx + 1).padStart(2, '0')}</span>
+                <span style="font-weight:600;">${escapeHTML(ch.title)}</span>
+            </div>
+            <div class="list-item-actions">
+                <button type="button" class="mini-btn rename-btn" onclick="window.editChapterRename('${ch.id}', event)" title="Rename">✏️ Rename</button>
+                <button type="button" class="mini-btn" onclick="event.stopPropagation(); window.selectChapter('${ch.id}', 3)">Lessons →</button>
+                <button type="button" class="mini-btn quiz-btn" onclick="event.stopPropagation(); window.selectChapter('${ch.id}', 5)">Quiz →</button>
+                <button type="button" class="del-btn" onclick="window.deleteChapter('${ch.id}', event)" title="Delete">✕</button>
+            </div>
+        </div>
+    `).join("");
+}
+
+function renderLessonsList() {
+    const el = document.getElementById("lessonsList");
+    if (!selectedChapterId) {
+        el.innerHTML = `<div class="empty-note">Select a chapter on Page 02 first.</div>`;
+        return;
+    }
+    if (!lessons.length) {
+        el.innerHTML = `<div class="empty-note">No lessons in this chapter yet. Fill the editor to add one.</div>`;
+        return;
+    }
+    el.innerHTML = lessons.map((l, idx) => `
+        <div class="list-item ${l.id === selectedLessonId ? 'active' : ''}" onclick="window.selectLesson('${l.id}', 0)">
+            <div class="list-item-title">
+                <span class="num-pill">${String(idx + 1).padStart(2, '0')}</span>
+                <div>
+                    <div style="font-weight:600;">${escapeHTML(l.title)}</div>
+                    ${l.video ? `<span class="yt-badge">▶ YouTube</span>` : ""}
+                </div>
+            </div>
+            <div class="list-item-actions">
+                <button type="button" class="mini-btn rename-btn" onclick="event.stopPropagation(); window.selectLesson('${l.id}', 3)">✏️ Edit</button>
+                <button type="button" class="mini-btn" onclick="event.stopPropagation(); window.selectLesson('${l.id}', 4)">Sections →</button>
+                <button type="button" class="del-btn" onclick="window.deleteLesson('${l.id}', event)" title="Delete">✕</button>
+            </div>
+        </div>
+    `).join("");
+}
+
+function renderArticlesList() {
+    const el = document.getElementById("articlesList");
+    if (!selectedLessonId) {
+        el.innerHTML = `<div class="empty-note">Select a lesson on Page 03 first.</div>`;
+        return;
+    }
+    if (!articles.length) {
+        el.innerHTML = `<div class="empty-note">No extra sections in this lesson yet.</div>`;
+        return;
+    }
+    el.innerHTML = articles.map((a, idx) => `
+        <div class="list-item ${a.id === selectedArticleId ? 'active' : ''}">
+            <div class="list-item-title">
+                <span class="num-pill">§${idx + 1}</span>
+                <div>
+                    <div style="font-weight:600;">${escapeHTML(a.title)}</div>
+                    <div style="font-size:11px; color:var(--text-gray); margin-top:2px;">
+                        ${escapeHTML((a.content || "").slice(0, 60))}${a.content && a.content.length > 60 ? "..." : ""}
+                    </div>
+                </div>
+            </div>
+            <div class="list-item-actions">
+                <button type="button" class="mini-btn rename-btn" onclick="window.editArticleRename('${a.id}')">✏️ Edit</button>
+                <button type="button" class="del-btn" onclick="window.deleteArticleBlock('${a.id}', event)" title="Delete">✕</button>
+            </div>
+        </div>
+    `).join("");
+}
+
+function renderChapterQuizList() {
+    const el = document.getElementById("chapterQuizList");
+    const statsEl = document.getElementById("chapterQuizScoreMeta");
+    if (!el) return;
+
+    const total = chapterQuizzes.length;
+    const ptsEach = total > 0 ? Number((20 / total).toFixed(2)) : 0;
+
+    if (statsEl) {
+        statsEl.innerHTML = total > 0
+            ? `TOTAL QUESTIONS: <strong>${total}</strong> &nbsp;//&nbsp; EACH = <strong>${ptsEach} PTS</strong> &nbsp;//&nbsp; MAX SCORE = <strong>20 / 20</strong>`
+            : `GRADING ALGORITHM: <strong>20 POINTS TOTAL</strong> (Add questions on the right)`;
+    }
+
+    if (!selectedChapterId) {
+        el.innerHTML = `<div class="empty-note">Select a Chapter on Page 02 first.</div>`;
+        return;
+    }
+    if (!total) {
+        el.innerHTML = `<div class="empty-note">No quiz questions yet. Design one on the right.</div>`;
+        return;
+    }
+
+    el.innerHTML = chapterQuizzes.map((q, idx) => {
+        const opts = Array.isArray(q.options) ? q.options : [];
+        const cIdx = Number(q.correctIndex ?? 0);
+        const correctLetter = OPTION_LETTERS[cIdx] || "A";
+        const correctText = opts[cIdx] || "";
+
+        return `
+            <div class="list-item ${q.id === selectedChapterQuizId ? 'active' : ''}" onclick="window.selectChapterQuizItem('${q.id}')">
+                <div class="list-item-title" style="align-items:flex-start;">
+                    <span class="num-pill">Q${String(idx + 1).padStart(2, '0')}</span>
+                    <div>
+                        <div style="font-weight:600; line-height:1.45;">${escapeHTML(q.question)}</div>
+                        <div class="correct-badge">✓ (${correctLetter}): ${escapeHTML(correctText)} · [${ptsEach} pts]</div>
+                    </div>
+                </div>
+                <div class="list-item-actions">
+                    <button type="button" class="mini-btn rename-btn" onclick="window.selectChapterQuizItem('${q.id}')">✏️ Edit</button>
+                    <button type="button" class="del-btn" onclick="window.deleteChapterQuizQuestion('${q.id}', event)" title="Delete">✕</button>
+                </div>
+            </div>
+        `;
+    }).join("");
+}
+
+function renderFinalExamList() {
+    const el = document.getElementById("finalExamList");
+    const statsEl = document.getElementById("finalExamScoreMeta");
+    if (!el) return;
+
+    const total = finalExams.length;
+    const ptsEach = total > 0 ? Number((20 / total).toFixed(2)) : 0;
+
+    if (statsEl) {
+        statsEl.innerHTML = total > 0
+            ? `TOTAL QUESTIONS: <strong>${total}</strong> &nbsp;//&nbsp; EACH = <strong>${ptsEach} PTS</strong> &nbsp;//&nbsp; FINAL EXAM = <strong>20 / 20</strong>`
+            : `GRADING ALGORITHM: <strong>20 POINTS TOTAL</strong> (Add questions on the right)`;
+    }
+
+    if (!selectedCourseId) {
+        el.innerHTML = `<div class="empty-note">Select a Course on Page 01 first.</div>`;
+        return;
+    }
+    if (!total) {
+        el.innerHTML = `<div class="empty-note">No final exam questions yet. Design one on the right.</div>`;
+        return;
+    }
+
+    el.innerHTML = finalExams.map((q, idx) => {
+        const opts = Array.isArray(q.options) ? q.options : [];
+        const cIdx = Number(q.correctIndex ?? 0);
+        const correctLetter = OPTION_LETTERS[cIdx] || "A";
+        const correctText = opts[cIdx] || "";
+
+        return `
+            <div class="list-item ${q.id === selectedFinalExamId ? 'active' : ''}" onclick="window.selectFinalExamItem('${q.id}')">
+                <div class="list-item-title" style="align-items:flex-start;">
+                    <span class="num-pill">EX ${String(idx + 1).padStart(2, '0')}</span>
+                    <div>
+                        <div style="font-weight:600; line-height:1.45;">${escapeHTML(q.question)}</div>
+                        <div class="correct-badge">✓ (${correctLetter}): ${escapeHTML(correctText)} · [${ptsEach} pts]</div>
+                    </div>
+                </div>
+                <div class="list-item-actions">
+                    <button type="button" class="mini-btn rename-btn" onclick="window.selectFinalExamItem('${q.id}')">✏️ Edit</button>
+                    <button type="button" class="del-btn" onclick="window.deleteFinalExamQuestion('${q.id}', event)" title="Delete">✕</button>
+                </div>
+            </div>
+        `;
+    }).join("");
+}
+
+function showToast(msg, type = "success") {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.className = `toast ${type} show`;
+    setTimeout(() => t.classList.remove("show"), 3000);
+}
+
+function escapeHTML(val) {
+    return String(val || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+window.toggleSurfaceTheme = function() {
+    const html = document.documentElement;
+    const next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    html.setAttribute("data-theme", next);
+};
+</script>
+
+<style>
+/* =========================================================
+   01. GOOGLE KEYWORD GLASSMORPHISM DESIGN TOKENS
+========================================================= */
+:root {
+    --g-blue: #4285F4;
+    --g-red: #EA4335;
+    --g-yellow: #FBBC05;
+    --g-green: #34A853;
+
+    --text-dark: #202124;
+    --text-gray: #5f6368;
+
+    --glass-bg: rgba(255, 255, 255, 0.62);
+    --glass-bg-hover: rgba(255, 255, 255, 0.85);
+    --glass-solid: rgba(255, 255, 255, 0.95);
+    --glass-border: rgba(255, 255, 255, 0.75);
+    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+    --glass-shadow-hover: 0 14px 42px 0 rgba(31, 38, 135, 0.12);
+
+    --border: rgba(0, 0, 0, 0.08);
+    --border-strong: rgba(0, 0, 0, 0.14);
+
+    --font-sans: 'Inter', sans-serif;
+    --font-display: 'Outfit', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+}
+
+html[data-theme="dark"] {
+    --text-dark: #f1f3f4;
+    --text-gray: #9aa0a6;
+    --glass-bg: rgba(32, 33, 36, 0.68);
+    --glass-bg-hover: rgba(45, 47, 51, 0.88);
+    --glass-solid: rgba(24, 26, 30, 0.96);
+    --glass-border: rgba(255, 255, 255, 0.12);
+    --glass-shadow: 0 10px 34px 0 rgba(0, 0, 0, 0.35);
+    --glass-shadow-hover: 0 16px 46px 0 rgba(0, 0, 0, 0.5);
+    --border: rgba(255, 255, 255, 0.09);
+    --border-strong: rgba(255, 255, 255, 0.18);
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+    width: 100%;
+    min-height: 100vh;
+}
+
+body {
+    background-color: #f4f6f9;
+    color: var(--text-dark);
+    font-family: var(--font-sans);
+    line-height: 1.6;
+    transition: background-color 0.35s ease, color 0.35s ease;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+}
+
+html[data-theme="dark"] body {
+    background-color: #121316;
+}
+
+h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    overflow-wrap: break-word;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+button {
+    font-family: inherit;
+    border: none;
+    outline: none;
+    cursor: pointer;
+}
+
+/* =========================================================
+   02. AMBIENT BACKGROUND BLOBS
+========================================================= */
+.ambient-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    overflow: hidden;
+    background: #f8f9fa;
+    pointer-events: none;
+    transition: background 0.35s ease;
+}
+
+html[data-theme="dark"] .ambient-bg {
+    background: #121316;
+}
+
+.blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(90px);
+    opacity: 0.42;
+    animation: float 15s infinite alternate ease-in-out;
+}
+
+html[data-theme="dark"] .blob { opacity: 0.22; }
+
+.blob-1 { width: clamp(280px, 45vw, 500px); height: clamp(280px, 45vw, 500px); background: var(--g-blue); top: -10%; left: -5%; }
+.blob-2 { width: clamp(240px, 40vw, 400px); height: clamp(240px, 40vw, 400px); background: var(--g-red); top: 20%; right: -5%; animation-delay: 2s; }
+.blob-3 { width: clamp(260px, 42vw, 450px); height: clamp(260px, 42vw, 450px); background: var(--g-yellow); bottom: -10%; left: 20%; animation-delay: 4s; }
+.blob-4 { width: clamp(200px, 35vw, 350px); height: clamp(200px, 35vw, 350px); background: var(--g-green); bottom: 10%; right: 15%; animation-delay: 6s; }
+
+@keyframes float {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(30px, 45px) scale(1.08); }
+}
+
+.glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+}
+
+/* =========================================================
+   03. LOGIN SCREEN
+========================================================= */
+.login-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+.login-card {
+    width: min(440px, 100%);
+    border-radius: 28px;
+    padding: clamp(30px, 5vw, 44px);
+}
+.login-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px;
+    border-radius: 50px;
+    border: 1px solid var(--glass-border);
+    background: rgba(66, 133, 244, 0.12);
+    color: var(--g-blue);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    margin-bottom: 16px;
+}
+.login-card h1 {
+    font-size: 1.85rem;
+    margin-bottom: 10px;
+}
+.login-card p {
+    font-size: 0.92rem;
+    color: var(--text-gray);
+    margin-bottom: 24px;
+}
+
+/* =========================================================
+   04. DASHBOARD TOP BAR & STEP TABS
+========================================================= */
+.admin-dashboard {
+    display: none;
+    flex-direction: column;
+    min-height: 100vh;
+    width: 100%;
+}
+
+.top-bar {
+    height: 68px;
+    min-height: 68px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 clamp(14px, 3vw, 32px);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    gap: 12px;
+    width: 100%;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+.logo-dots { display: flex; gap: 4px; flex-shrink: 0; }
+.dot { width: 7px; height: 7px; border-radius: 50%; }
+.dot-blue { background: var(--g-blue); }
+.dot-red { background: var(--g-red); }
+.dot-yellow { background: var(--g-yellow); }
+.dot-green { background: var(--g-green); }
+
+.brand-name {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    white-space: nowrap;
+}
+.brand-sub {
+    color: var(--text-gray);
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    border-left: 2px solid var(--border-strong);
+    padding-left: 8px;
+    white-space: nowrap;
+}
+
+.user-pill {
+    padding: 4px 12px;
+    border-radius: 50px;
+    border: 1px solid var(--glass-border);
+    background: rgba(52, 168, 83, 0.12);
+    color: var(--g-green);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.top-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.btn {
+    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.6);
+    color: var(--text-dark);
+    padding: 8px 16px;
+    border-radius: 50px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+html[data-theme="dark"] .btn { background: rgba(255, 255, 255, 0.08); }
+.btn:hover {
+    background: var(--glass-bg-hover);
+    transform: translateY(-1px);
+    border-color: var(--g-blue);
+    color: var(--g-blue);
+}
+.btn.primary {
+    background: var(--g-blue);
+    border-color: var(--g-blue);
+    color: #ffffff;
+}
+.btn.primary:hover {
+    background: #3367d6;
+    color: #ffffff;
+    box-shadow: 0 4px 16px rgba(66, 133, 244, 0.3);
+}
+
+/* Stepper Tabs Bar (6 Pages) */
+.stepper-shell {
+    max-width: 1240px;
+    width: 100%;
+    margin: 20px auto 0;
+    padding: 0 clamp(14px, 3vw, 28px);
+}
+
+.stepper-tabs {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+    width: 100%;
+}
+
+.step-tab {
+    padding: 12px 14px;
+    border-radius: 18px;
+    color: var(--text-gray);
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    transition: all 0.2s ease;
+    border: 1px solid var(--glass-border);
+    background: var(--glass-bg);
+}
+.step-tab:hover {
+    background: var(--glass-bg-hover);
+    color: var(--text-dark);
+}
+.step-tab.active {
+    background: var(--g-blue);
+    border-color: var(--g-blue);
+    color: #ffffff;
+    box-shadow: 0 6px 20px rgba(66, 133, 244, 0.25);
+}
+
+.step-tab-num {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    opacity: 0.85;
+}
+.step-tab-title {
+    font-family: var(--font-display);
+    font-size: 0.92rem;
+    font-weight: 700;
+}
+
+/* Active Selection Strip */
+.selection-strip {
+    margin-top: 12px;
+    padding: 10px 18px;
+    border-radius: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-gray);
+}
+.selection-strip strong {
+    color: var(--g-blue);
+}
+
+/* =========================================================
+   05. PAGES CONTAINER & PANELS
+========================================================= */
+.pages-container {
+    max-width: 1240px;
+    width: 100%;
+    margin: 18px auto 60px;
+    padding: 0 clamp(14px, 3vw, 28px);
+    flex: 1;
+}
+
+.step-page {
+    display: none;
+    animation: fadeSlide 0.25s ease;
+}
+.step-page.active { display: block; }
+
+@keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.page-grid-2col {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 22px;
+    align-items: start;
+}
+
+.page-grid-lesson {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 22px;
+    align-items: start;
+}
+
+.panel {
+    border-radius: 24px;
+    padding: clamp(20px, 3vw, 30px);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    gap: 10px;
+}
+.panel-kicker {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--g-blue);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+.panel-title {
+    font-size: 1.3rem;
+    margin-top: 2px;
+}
+
+.field-label {
+    display: block;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--text-gray);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.input, .textarea, .select-input {
+    width: 100%;
+    padding: 11px 14px;
+    border-radius: 14px;
+    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.7);
+    color: var(--text-dark);
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    margin-bottom: 14px;
+    transition: all 0.2s ease;
+    outline: none;
+}
+html[data-theme="dark"] .input,
+html[data-theme="dark"] .textarea,
+html[data-theme="dark"] .select-input {
+    background: rgba(255, 255, 255, 0.05);
+}
+.input:focus, .textarea:focus, .select-input:focus {
+    border-color: var(--g-blue);
+    background: var(--glass-solid);
+    box-shadow: 0 4px 14px rgba(66, 133, 244, 0.15);
+}
+
+.textarea {
+    min-height: 120px;
+    resize: vertical;
+    line-height: 1.6;
+}
+.textarea.code-input {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    background: #16181d;
+    color: #e8eaed;
+}
+
+.options-grid-2x2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.score-algorithm-banner {
+    padding: 10px 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(52, 168, 83, 0.4);
+    background: rgba(52, 168, 83, 0.08);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-gray);
+    line-height: 1.5;
+}
+.score-algorithm-banner strong {
+    color: var(--g-green);
+}
+
+.correct-badge {
+    margin-top: 4px;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--g-green);
+    font-weight: 600;
+}
+
+.yt-preview-box {
+    display: none;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #000;
+    margin-bottom: 14px;
+}
+.yt-preview-box iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+.yt-badge {
+    display: inline-block;
+    margin-top: 3px;
+    padding: 2px 7px;
+    border-radius: 50px;
+    background: rgba(234, 67, 53, 0.12);
+    color: var(--g-red);
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 700;
+}
+
+/* Item List */
+.item-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.45);
+    cursor: pointer;
+    font-size: 0.88rem;
+    transition: all 0.2s ease;
+}
+html[data-theme="dark"] .list-item {
+    background: rgba(255, 255, 255, 0.04);
+}
+.list-item:hover {
+    background: var(--glass-bg-hover);
+    transform: translateY(-1px);
+}
+.list-item.active {
+    border-color: var(--g-blue);
+    background: rgba(66, 133, 244, 0.12);
+}
+
+.list-item-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.list-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+.mini-btn {
+    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.65);
+    color: var(--text-dark);
+    padding: 5px 9px;
+    border-radius: 50px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+html[data-theme="dark"] .mini-btn { background: rgba(255, 255, 255, 0.08); }
+.mini-btn:hover {
+    background: var(--g-blue);
+    color: #ffffff;
+    border-color: var(--g-blue);
+}
+.mini-btn.rename-btn {
+    background: rgba(251, 188, 5, 0.14);
+    color: #c98800;
+    border-color: rgba(251, 188, 5, 0.4);
+}
+.mini-btn.rename-btn:hover {
+    background: #d99f00;
+    color: #ffffff;
+}
+.mini-btn.quiz-btn {
+    background: rgba(52, 168, 83, 0.12);
+    color: var(--g-green);
+    border-color: rgba(52, 168, 83, 0.4);
+}
+.mini-btn.quiz-btn:hover {
+    background: var(--g-green);
+    color: #ffffff;
+}
+
+.badge-icon, .num-pill {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    background: rgba(66, 133, 244, 0.12);
+    color: var(--g-blue);
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.del-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-gray);
+    font-size: 14px;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+.del-btn:hover {
+    background: rgba(234, 67, 53, 0.15);
+    color: var(--g-red);
+}
+
+.empty-note {
+    font-size: 0.84rem;
+    color: var(--text-gray);
+    padding: 24px 16px;
+    text-align: center;
+    border: 1px dashed var(--border-strong);
+    border-radius: 16px;
+}
+
+.page-footer-nav {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* Toast */
+.toast {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    padding: 11px 18px;
+    border-radius: 50px;
+    background: var(--g-blue);
+    color: #ffffff;
+    font-size: 0.82rem;
+    font-weight: 600;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: 0.28s ease;
+    pointer-events: none;
+    z-index: 999;
+    box-shadow: 0 8px 24px rgba(66, 133, 244, 0.35);
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.error { background: var(--g-red); box-shadow: 0 8px 24px rgba(234, 67, 53, 0.35); }
+
+/* =========================================================
+   06. RESPONSIVE QUERIES
+========================================================= */
+@media (max-width: 1080px) {
+    .stepper-tabs { grid-template-columns: repeat(3, 1fr); }
+    .page-grid-2col, .page-grid-lesson { grid-template-columns: 1fr; }
+    .user-pill { display: none; }
+}
+
+@media (max-width: 680px) {
+    .brand-sub { display: none; }
+    .stepper-tabs { grid-template-columns: repeat(2, 1fr); }
+    .options-grid-2x2 { grid-template-columns: 1fr; }
+    .top-bar { padding: 0 12px; }
+    .stepper-shell, .pages-container { padding: 0 12px; }
+    .panel { padding: 16px 14px; }
+    .list-item { flex-direction: column; align-items: stretch; gap: 8px; }
+    .list-item-actions { justify-content: flex-end; }
+}
+</style>
+</head>
+<body>
+
+<!-- Ambient Glass Background Blobs -->
+<div class="ambient-bg">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+    <div class="blob blob-4"></div>
+</div>
+
+<!-- =========================================================
+     1. ADMIN LOGIN SCREEN
+========================================================= -->
+<section class="login-screen" id="loginScreen">
+    <form class="login-card glass" onsubmit="window.handleLogin(event)">
+        <div class="login-badge">● FIREBASE AUTH GUARD</div>
+        <h1>Admin Studio</h1>
+        <p>Sign in with your authorized Firebase Admin email (<strong>yasharkamran98@gmail.com</strong>) to manage courses, chapters, lessons, quizzes, and final exams.</p>
+
+        <label class="field-label">Admin Email</label>
+        <input type="email" id="loginEmail" class="input" placeholder="yasharkamran98@gmail.com" required>
+
+        <label class="field-label">Password</label>
+        <input type="password" id="loginPassword" class="input" placeholder="••••••••" required>
+
+        <button type="submit" id="loginBtn" class="btn primary" style="width:100%; padding:12px; margin-top:4px;">
+            UNLOCK ADMIN STUDIO →
+        </button>
+
+        <div style="margin-top: 16px; display:flex; justify-content:space-between; gap:10px;">
+            <a href="learning.html" class="btn" style="flex:1;">← Learning</a>
+            <a href="index.html" class="btn" style="flex:1;">Main Site</a>
+        </div>
+    </form>
+</section>
+
+<!-- =========================================================
+     2. ADMIN DASHBOARD WITH EDIT & RENAME
+========================================================= -->
+<div class="admin-dashboard" id="adminDashboard">
+    <header class="top-bar glass">
+        <div class="brand">
+            <div class="logo-dots">
+                <div class="dot dot-blue"></div>
+                <div class="dot dot-red"></div>
+                <div class="dot dot-yellow"></div>
+                <div class="dot dot-green"></div>
+            </div>
+            <span class="brand-name">Yashar Kamran</span>
+            <span class="brand-sub">Admin CMS</span>
+            <span class="user-pill" id="adminEmailBadge">admin</span>
+        </div>
+
+        <div class="top-actions">
+            <button type="button" class="btn" onclick="toggleSurfaceTheme()">◐ Tone</button>
+            <a href="learning.html" class="btn primary">Learning ↗</a>
+            <a href="index.html" class="btn">Main Site</a>
+            <button type="button" class="btn" onclick="window.handleLogout()">Logout</button>
+        </div>
+    </header>
+
+    <!-- STEPPER NAVIGATION BAR (6 PAGES) -->
+    <div class="stepper-shell">
+        <div class="stepper-tabs">
+            <button type="button" class="step-tab active" onclick="window.goToPage(1)">
+                <span class="step-tab-num">PAGE 01</span>
+                <span class="step-tab-title">Courses</span>
+            </button>
+            <button type="button" class="step-tab" onclick="window.goToPage(2)">
+                <span class="step-tab-num">PAGE 02</span>
+                <span class="step-tab-title">Chapters</span>
+            </button>
+            <button type="button" class="step-tab" onclick="window.goToPage(3)">
+                <span class="step-tab-num">PAGE 03</span>
+                <span class="step-tab-title">Lessons Editor</span>
+            </button>
+            <button type="button" class="step-tab" onclick="window.goToPage(4)">
+                <span class="step-tab-num">PAGE 04</span>
+                <span class="step-tab-title">Extra Sections</span>
+            </button>
+            <button type="button" class="step-tab" onclick="window.goToPage(5)">
+                <span class="step-tab-num">PAGE 05 // QUIZ</span>
+                <span class="step-tab-title">Chapter Quiz</span>
+            </button>
+            <button type="button" class="step-tab" onclick="window.goToPage(6)">
+                <span class="step-tab-num">PAGE 06 // EXAM</span>
+                <span class="step-tab-title">Final Exam</span>
+            </button>
+        </div>
+
+        <div class="selection-strip glass">
+            <span>Course: <strong id="crumbCourse">None</strong></span>
+            <span>//</span>
+            <span>Chapter: <strong id="crumbChapter">None</strong></span>
+            <span>//</span>
+            <span>Lesson: <strong id="crumbLesson">None</strong></span>
+        </div>
+    </div>
+
+    <!-- =====================================================
+         STEP PAGES
+    ====================================================== -->
+    <main class="pages-container">
+
+        <!-- PAGE 01: COURSES -->
+        <section class="step-page active" id="page1">
+            <div class="page-grid-2col">
+                <div class="panel glass">
+                    <div class="panel-header">
+                        <div>
+                            <div class="panel-kicker" id="courseFormMode">CREATE NEW COURSE</div>
+                            <div class="panel-title">Course Management</div>
+                        </div>
+                    </div>
+                    <form onsubmit="window.handleCourseSubmit(event)">
+                        <label class="field-label">Course Title</label>
+                        <input class="input" id="courseTitle" placeholder="e.g. CCNA 200-301" required>
+
+                        <label class="field-label">Course Icon</label>
+                        <input class="input" id="courseIcon" placeholder="◈, ⚡, ⌘" value="◈">
+
+                        <div style="display:flex; gap:8px;">
+                            <button type="submit" id="btnSubmitCourse" class="btn primary" style="flex:1; padding:12px;">
+                                + CREATE COURSE
+                            </button>
+                            <button type="button" id="btnCancelCourseEdit" class="btn" style="display:none; padding:12px;" onclick="window.clearCourseForm()">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="panel glass">
+                    <div class="panel-header">
+                        <div>
+                            <div class="panel-kicker">EXISTING COURSES</div>
+                            <div class="panel-title">Select or Rename a Course</div>
+                        </div>
+                    </div>
+                    <div class="item-list" id="coursesList"></div>
+
+                    <div class="page-footer-nav">
+                        <span style="font-family:var(--font-mono); font-size:11px; color:var(--text-gray);">
+                            Selected: <strong class="selected-course-name">—</strong>
+                        </span>
+                        <div style="display:flex; gap:8px;">
+                            <button type="button" class="btn" onclick="window.goToPage(6)">Final Exam →</button>
+                            <button type="button" class="btn primary" onclick="window.goToPage(2)">Chapters →</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE 02: CHAPTERS -->
+        <section class="step-page" id="page2">
+            <div class="page-grid-2col">
+                <div class="panel glass">
+                    <div class="panel-header">
+                        <div>
+                            <div class="panel-kicker" id="chapterFormMode">ADD CHAPTER</div>
+                            <div class="panel-title">Course: <span class="selected-course-name">—</span></div>
+                        </div>
+                    </div>
+                    <form onsubmit="window.handleChapterSubmit(event)">
+                        <label class="field-label">Chapter Title</label>
+                        <input class="input" id="chapterTitle" placeholder="e.g. Chapter 1: OSPF Routing" required>
+
+                        <div style="display:flex; gap:8px;">
+                            <button type="submit" id="btnSubmitChapter" class="btn primary" style="flex:1; padding:12px;">
+                                + ADD CHAPTER TO COURSE
+                            </button>
+                            <button type="button" id="btnCancelChapterEdit" class="btn" style="display:none; padding:12px;" onclick="window.clearChapterForm()">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="panel glass">
+                    <div class="panel-header">
+                        <div>
+                            <div class="panel-kicker">CHAPTERS LIST</div>
+                            <div class="panel-title">Select or Rename Chapter</div>
+                        </div>
+                    </div>
+                    <div class="item-list" id="chaptersList"></div>
+
+                    <div class="page-footer-nav">
+                        <button type="button" class="btn" onclick="window.goToPage(1)">← Courses</button>
+                        <div style="display:flex; gap:8px;">
+                            <button type="button" class="btn" onclick="window.goToPage(5)">Quiz (20) →</button>
+                            <button type="button" class="btn primary" onclick="window.goToPage(3)">Lessons →</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE 03: LESSONS -->
+        <section class="step-page" id="page3">
+            <div class="page-grid-lesson">
+                <div class="panel glass">
+                    <div class="panel-header">
+                        <div>
+                            <div class="panel-kicker">CHAPTER LESSONS</div>
+                            <div class="panel-title"><span class="selected-chapter-name">—</span></div>
+                        </div>
+                        <button type="button" class="btn" style="padding:6px 12px; font-size:11px;" onclick="window.clearLessonForm()">
+                            + New Form
+                        </button>
+                    </div>
+
+                    <div class="item-list" id="lessonsList"></div>
+
+                    <div class="page-footer-nav">
+                        <button type="button" class="btn" onclick="window.goToPage(2)">← Chapters</button>
+                        <div style="display:flex; gap:8px;">
+                            <button type="button" class="btn" onclick="window.goToPage(5)">Quiz →</button>
+                            <button type="button" class="btn primary" onclick="window.goToPage(4)">Sections →</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel glass">
+                    <div class="panel-header">
+                        <div>
+                            <div class="panel-kicker" id="lessonFormMode">CREATE NEW LESSON</div>
+                            <div class="panel-title">Lesson Content, Video & CLI Editor</div>
+                        </div>
+                    </div>
+
+                    <form onsubmit="window.addNewLesson(event)">
+                        <label class="field-label">Lesson Title (Rename / Edit)</label>
+                        <input class="input" id="lessonTitle" placeholder="e.g. Configuring 802.1Q VLAN Trunks" required>
+
+                        <label class="field-label">Main Tutorial Explanation</label>
+                        <textarea class="textarea" id="lessonContent" placeholder="Write lesson tutorial explanation here..."></textarea>
+
+                        <label class="field-label">▶ YouTube Video URL (Optional)</label>
+                        <input class="input" id="lessonVideo" placeholder="https://www.youtube.com/watch?v=..." oninput="window.previewYouTubeInput('lessonVideo', 'lessonVideoPreview')">
+                        <div class="yt-preview-box" id="lessonVideoPreview"></div>
+
+                        <label class="field-label">CLI Commands / Code Block (Optional)</label>
+                        <textarea class="textarea code-input" id="lessonCode" placeholder="Switch(config)# interface gigabitEthernet 0/1..."></textarea>
+
+                        <label class="field-label">Diagram / Screenshot Image URL (Optional)</label>
+                        <input class="input" id="lessonImage" placeholder="https://...">
+
+                        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:6px;">
+                            <button type="submit" class="btn primary" style="padding:12px 22px;">
+                                + PUBLISH AS NEW LESSON
+                            </button>
+                            <button type="button" id="btnUpdateLesson" class="btn" style="display:none; padding:12px 22px; background:var(--g-blue); color:#fff;" onclick="window.updateSelectedLesson()">
+                                💾 SAVE CHANGES / RENAME LESSON
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE 04: EXTRA ARTICLE BLOCKS -->
+        <section class="step-page" id="page4">
+            <div class="page-grid-2col">
+                <div class="panel glass">
+                    <div class="panel-header">
+                        <div>
+                            <div class="panel-kicker" id="articleFormMode">APPEND EXTRA SECTION</div>
+                            <div class="panel-title">Lesson: <span class="selected-lesson-name">—</span></div>
+                        </div>
+                    </div>
+
+                    <form onsubmit="window.handleArticleSubmit(event)">
+                        <label class="field-label">Section Heading / Subtitle</label>
+                        <input class="input" id="articleTitle" placeholder="e.g. Step 2: Verification & Troubleshooting" required>
+
+                        <label class="field-label">Section Text</label>
+                        <textarea class="textarea" id="articleContent" placeholder="Additional explanation..."></textarea>
+
+                        <label class="field-label">▶ YouTube Video URL for this Section (Optional)</label>
+                        <input class="input" id="articleVideo" placeholder="https://www.youtube.com/watch?v=..." oninput="window.previewYouTubeInput('articleVideo', 'articleVideoPreview')">
+                        <div class="yt-preview-box" id="articleVideoPreview"></div>
+
+                        <label class="field-label">Optional CLI Block</label>
+                        <textarea class="textarea code-input" id="articleCode" placeholder="show interfaces trunk..."></textarea>
+
+                        <label class="field-label">Optional Image URL</label>
+                        <input class="input" id="articleImage" placeholder="https://...">
+
+                        <div style="display:flex; gap:8px;">
+                            <button type="submit" id="btnSubmitArticle" class="btn primary" style="flex:1; padding:12px;">
+                                + APPEND SECTION TO LESSON
+                            </button>
+                            <button type="button" id="btnCancelArticleEdit" class="btn" style="display:none; padding:12px;" onclick="window.clearArticleForm()">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="panel glass">
+                    <div class="panel-header">
+                        <div>
+                            <div class="panel-kicker">SECTIONS IN THIS LESSON</div>
+                            <div class="panel-title">Attached Blocks</div>
+                        </div>
+                    </div>
+
+                    <div class="item-list" id="articlesList"></div>
+
+                    <div class="page-footer-nav">
+                        <button type="button" class="btn" onclick="window.goToPage(3)">← Back to Lesson</button>
+                        <button type="button" class="btn primary" onclick="window.goToPage(5)">Chapter Quiz →</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE 05: CHAPTER QUIZ BUILDER (GRADED OUT OF 20) -->
+        <section class="step-page" id="page5">
+            <div class="page-grid-lesson">
+                <div class="panel glass">
+                    <div class="panel-header">
+                        <div>
+                            <div class="panel-kicker">CHAPTER QUIZ</div>
+                            <div class="panel-title"><span class="selected-chapter-name">—</span></div>
+                        </div>
+                        <button type="button" class="btn" style="padding:6px 12px; font-size:11px;" onclick="window.clearChapterQuizForm()">
+                            + New Question
+                        </button>
+                    </div>
+
+                    <div class="score-algorithm-banner" id="chapterQuizScoreMeta">
+                        GRADING ALGORITHM: <strong>20 POINTS TOTAL</strong>
+                    </div>
+
+                    <div class="item-list" id="chapterQuizList"></div>
+
+                    <div class="page-footer-nav">
+                        <button type="button" class="btn" onclick="window.goToPage(2)">← Chapters</button>
+                        <button type="button" class="btn primary" onclick="window.goToPage(6)">Final Exam →</button>
+                    </div>
+                </div>
+
+                <div class="panel glass">
+                    <div class="panel-header">
+                        <div>
+                            <div class="panel-kicker" id="chapQuizFormMode">CREATE NEW CHAPTER QUIZ QUESTION</div>
+                            <div class="panel-title">Multiple Choice (Out of 20)</div>
+                        </div>
+                    </div>
+
+                    <form onsubmit="window.addChapterQuizQuestion(event)">
+                        <label class="field-label">Question Text (Rename / Edit)</label>
+                        <textarea class="textarea" id="chapQuizQuestion" style="min-height:85px;" placeholder="e.g. Which layer of the OSI model handles logical IP routing?" required></textarea>
+
+                        <div class="options-grid-2x2">
+                            <div>
+                                <label class="field-label">Option A</label>
+                                <input class="input" id="chapQuizOpt0" placeholder="Option A" required>
+                            </div>
+                            <div>
+                                <label class="field-label">Option B</label>
+                                <input class="input" id="chapQuizOpt1" placeholder="Option B" required>
+                            </div>
+                            <div>
+                                <label class="field-label">Option C</label>
+                                <input class="input" id="chapQuizOpt2" placeholder="Option C" required>
+                            </div>
+                            <div>
+                                <label class="field-label">Option D</label>
+                                <input class="input" id="chapQuizOpt3" placeholder="Option D" required>
+                            </div>
+                        </div>
+
+                        <label class="field-label">Correct Option</label>
+                        <select class="select-input" id="chapQuizCorrect" required>
+                            <option value="0">Option A is Correct</option>
+                            <option value="1">Option B is Correct</option>
+                            <option value="2">Option C is Correct</option>
+                            <option value="3">Option D is Correct</option>
+                        </select>
+
+                        <label class="field-label">Explanation (Optional)</label>
+                        <input class="input" id="chapQuizExplanation" placeholder="Explanation shown to student after submit">
+
+                        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:4px;">
+                            <button type="submit" class="btn primary" style="padding:12px 22px;">
+                                + ADD QUESTION
+                            </button>
+                            <button type="button" id="btnUpdateChapQuiz" class="btn" style="display:none; padding:12px 22px; background:var(--g-blue); color:#fff;" onclick="window.updateChapterQuizQuestion()">
+                                💾 SAVE CHANGES / RENAME
+                            </button>
+                            <button type="button" id="btnCancelChapQuiz" class="btn" style="display:none; padding:12px 18px;" onclick="window.clearChapterQuizForm()">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- PAGE 06: COURSE FINAL EXAM BUILDER (GRADED OUT OF 20) -->
+        <section class="step-page" id="page6">
+            <div class="page-grid-lesson">
+                <div class="panel glass">
+                    <div class="panel-header">
+                        <div>
+                            <div class="panel-kicker">COURSE FINAL EXAM</div>
+                            <div class="panel-title"><span class="selected-course-name">—</span></div>
+                        </div>
+                        <button type="button" class="btn" style="padding:6px 12px; font-size:11px;" onclick="window.clearFinalExamForm()">
+                            + New Question
+                        </button>
+                    </div>
+
+                    <div class="score-algorithm-banner" id="finalExamScoreMeta">
+                        GRADING ALGORITHM: <strong>20 POINTS TOTAL</strong>
+                    </div>
+
+                    <div class="item-list" id="finalExamList"></div>
+
+                    <div class="page-footer-nav">
+                        <button type="button" class="btn" onclick="window.goToPage(1)">← Courses</button>
+                        <a href="learning.html" class="btn primary">Open Live Learning ↗</a>
+                    </div>
+                </div>
+
+                <div class="panel glass">
+                    <div class="panel-header">
+                        <div>
+                            <div class="panel-kicker" id="finalExamFormMode">CREATE NEW FINAL EXAM QUESTION</div>
+                            <div class="panel-title">Final Exam Builder (Out of 20)</div>
+                        </div>
+                    </div>
+
+                    <form onsubmit="window.addFinalExamQuestion(event)">
+                        <label class="field-label">Exam Question Text (Rename / Edit)</label>
+                        <textarea class="textarea" id="finalExamQuestion" style="min-height:85px;" placeholder="e.g. What is the default administrative distance of OSPF?" required></textarea>
+
+                        <div class="options-grid-2x2">
+                            <div>
+                                <label class="field-label">Option A</label>
+                                <input class="input" id="finalExamOpt0" placeholder="Option A" required>
+                            </div>
+                            <div>
+                                <label class="field-label">Option B</label>
+                                <input class="input" id="finalExamOpt1" placeholder="Option B" required>
+                            </div>
+                            <div>
+                                <label class="field-label">Option C</label>
+                                <input class="input" id="finalExamOpt2" placeholder="Option C" required>
+                            </div>
+                            <div>
+                                <label class="field-label">Option D</label>
+                                <input class="input" id="finalExamOpt3" placeholder="Option D" required>
+                            </div>
+                        </div>
+
+                        <label class="field-label">Correct Option</label>
+                        <select class="select-input" id="finalExamCorrect" required>
+                            <option value="0">Option A is Correct</option>
+                            <option value="1">Option B is Correct</option>
+                            <option value="2">Option C is Correct</option>
+                            <option value="3">Option D is Correct</option>
+                        </select>
+
+                        <label class="field-label">Explanation (Optional)</label>
+                        <input class="input" id="finalExamExplanation" placeholder="Detailed answer explanation">
+
+                        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:4px;">
+                            <button type="submit" class="btn primary" style="padding:12px 22px;">
+                                + ADD TO FINAL EXAM
+                            </button>
+                            <button type="button" id="btnUpdateFinalExam" class="btn" style="display:none; padding:12px 22px; background:var(--g-blue); color:#fff;" onclick="window.updateFinalExamQuestion()">
+                                💾 SAVE CHANGES / RENAME
+                            </button>
+                            <button type="button" id="btnCancelFinalExam" class="btn" style="display:none; padding:12px 18px;" onclick="window.clearFinalExamForm()">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<div id="toast" class="toast"></div>
+
+</body>
+</html>
