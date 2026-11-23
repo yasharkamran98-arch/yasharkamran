@@ -41,20 +41,16 @@
             --fill-slab: rgba(255, 255, 255, 0.92);
             --fill-on: #202124;
 
-            /* Liquid Glass Mobile Select Tokens */
-            --lg-btn-bg: rgba(255, 255, 255, 0.68);
-            --lg-btn-border: rgba(255, 255, 255, 0.88);
-            --lg-btn-shadow: 0 6px 20px rgba(31, 38, 135, 0.10), inset 0 1.5px 1px rgba(255, 255, 255, 0.95), inset 0 -1px 2px rgba(31, 38, 135, 0.06);
-            --lg-surface-bg: rgba(255, 255, 255, 0.78);
-            --lg-surface-border: rgba(255, 255, 255, 0.85);
-            --lg-surface-shadow: 0 20px 50px rgba(31, 38, 135, 0.16), 0 4px 14px rgba(0, 0, 0, 0.05);
-            --lg-neck-fill: rgba(255, 255, 255, 0.74);
-            --lg-neck-stroke: rgba(255, 255, 255, 0.92);
-
             /* Scroll-Driven Text Fill Tokens */
             --srf-dim: rgba(32, 33, 36, 0.22);
             --srf-lit: #202124;
             --srf-highlight: #4285F4;
+
+            /* Gooey Mobile/Tablet Menu Tokens (Monochrome & Glassy) */
+            --gooey-blob: #202124;
+            --gooey-fg: #ffffff;
+            --gooey-sheen: rgba(255, 255, 255, 0.28);
+            --gooey-shadow: 0 10px 28px rgba(32, 33, 36, 0.24);
         }
 
         html[data-theme="dark"] {
@@ -70,20 +66,16 @@
             --fill-slab: rgba(45, 47, 51, 0.95);
             --fill-on: #ffffff;
 
-            /* Liquid Glass Mobile Select Dark Tokens */
-            --lg-btn-bg: rgba(44, 46, 52, 0.74);
-            --lg-btn-border: rgba(255, 255, 255, 0.22);
-            --lg-btn-shadow: 0 6px 22px rgba(0, 0, 0, 0.42), inset 0 1.5px 1px rgba(255, 255, 255, 0.22), inset 0 -1px 2px rgba(0, 0, 0, 0.35);
-            --lg-surface-bg: rgba(28, 30, 35, 0.82);
-            --lg-surface-border: rgba(255, 255, 255, 0.16);
-            --lg-surface-shadow: 0 24px 56px rgba(0, 0, 0, 0.58), 0 4px 16px rgba(0, 0, 0, 0.35);
-            --lg-neck-fill: rgba(36, 38, 44, 0.80);
-            --lg-neck-stroke: rgba(255, 255, 255, 0.22);
-
             /* Scroll-Driven Text Fill Dark Tokens */
             --srf-dim: rgba(241, 243, 244, 0.22);
             --srf-lit: #f1f3f4;
             --srf-highlight: #4285F4;
+
+            /* Gooey Mobile/Tablet Menu Dark Tokens */
+            --gooey-blob: #f1f3f4;
+            --gooey-fg: #121316;
+            --gooey-sheen: rgba(255, 255, 255, 0.65);
+            --gooey-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
         }
 
         *, *::before, *::after {
@@ -270,7 +262,7 @@
             font-weight: 500;
             line-height: 1.5;
             color: var(--text-gray);
-            animation-delay: 0.28s; /* Medium cascade delay */
+            animation-delay: 0.28s;
         }
 
         .intro-line-3 {
@@ -279,7 +271,7 @@
             justify-content: center;
             gap: 7px;
             padding-top: 6px;
-            animation-delay: 0.46s; /* Medium cascade delay */
+            animation-delay: 0.46s;
         }
 
         @keyframes introSlideUp {
@@ -552,82 +544,6 @@
         .theme-cycle-btn:hover {
             border-color: var(--g-blue);
             color: var(--g-blue);
-        }
-
-        /* Liquid Glass Mobile Select Trigger (Hidden on Desktop) */
-        .mobile-toggle {
-            display: none;
-            position: relative;
-            z-index: 102;
-            height: 36px;
-            padding: 0 11px 0 13px;
-            border-radius: 999px;
-            background: var(--lg-btn-bg);
-            backdrop-filter: blur(18px) saturate(160%);
-            -webkit-backdrop-filter: blur(18px) saturate(160%);
-            border: 1px solid var(--lg-btn-border);
-            box-shadow: var(--lg-btn-shadow);
-            color: var(--text-dark);
-            font-size: 0.8rem;
-            font-weight: 600;
-            gap: 6px;
-            flex-shrink: 0;
-            align-items: center;
-            justify-content: center;
-            white-space: nowrap;
-            will-change: transform;
-            transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .mobile-toggle:focus-visible {
-            box-shadow: 0 0 0 2px var(--g-blue), var(--lg-btn-shadow);
-        }
-
-        .mobile-toggle-label {
-            display: inline-block;
-            min-width: 38px;
-            text-align: left;
-            letter-spacing: -0.01em;
-        }
-
-        .mobile-toggle-chevron {
-            width: 14px;
-            height: 14px;
-            flex-shrink: 0;
-            color: var(--text-gray);
-            transition: transform 0.36s cubic-bezier(0.22, 1.25, 0.36, 1), color 0.2s ease;
-        }
-
-        .mobile-toggle[aria-expanded="true"] {
-            border-color: rgba(66, 133, 244, 0.45);
-        }
-
-        .mobile-toggle[aria-expanded="true"] .mobile-toggle-chevron {
-            transform: rotate(180deg);
-            color: var(--g-blue);
-        }
-
-        /* Liquid Glass Connecting Neck SVG Layer */
-        .glass-neck-svg {
-            position: fixed;
-            inset: 0;
-            width: 100vw;
-            height: 100vh;
-            pointer-events: none;
-            z-index: 99;
-            overflow: visible;
-            display: none;
-        }
-
-        .glass-neck-path {
-            fill: var(--lg-neck-fill);
-            stroke: var(--lg-neck-stroke);
-            stroke-width: 1;
-            filter: drop-shadow(0 8px 18px rgba(31, 38, 135, 0.12));
-        }
-
-        html[data-theme="dark"] .glass-neck-path {
-            filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.45));
         }
 
         /* ==========================================================================
@@ -1556,7 +1472,8 @@
         body.shatter-hiding > header.top-nav,
         body.shatter-hiding > main.container,
         body.shatter-hiding > footer,
-        body.shatter-hiding > nav.mobile-quick-bar {
+        body.shatter-hiding > nav.mobile-quick-bar,
+        body.shatter-hiding > .gooey-menu {
             visibility: hidden;
         }
 
@@ -1566,7 +1483,200 @@
         }
 
         /* ==========================================================================
-           10. RESPONSIVE MEDIA QUERIES (FLUID LAYOUTS & LIQUID GLASS MOBILE SELECT)
+           12. GOOEY ARC MENU (MOBILE & TABLET ONLY — BOTTOM RIGHT)
+           Settings: Layout=Arc, How gooey=Medium, Speed=Normal, Monochrome Glass
+        ========================================================================== */
+        .gooey-svg-defs {
+            position: absolute;
+            width: 0;
+            height: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .gooey-menu {
+            display: none;
+            position: fixed;
+            right: 22px;
+            bottom: 24px;
+            width: 210px;
+            height: 210px;
+            z-index: 160;
+            pointer-events: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Filtered layer kept compact (210x210) for smooth performance */
+        .gooey-blobs {
+            position: absolute;
+            inset: 0;
+            filter: url(#gooey-filter-tablet);
+            pointer-events: none;
+        }
+
+        .gooey-blob {
+            position: absolute;
+            right: 12px;
+            bottom: 12px;
+            border-radius: 50%;
+            background: var(--gooey-blob);
+            will-change: transform;
+        }
+
+        .gooey-blob-main {
+            width: 54px;
+            height: 54px;
+            transition: transform 0.36s cubic-bezier(0.34, 1.45, 0.64, 1);
+        }
+
+        .gooey-menu.is-open .gooey-blob-main {
+            transform: scale(0.94);
+        }
+
+        .gooey-blob-item {
+            width: 44px;
+            height: 44px;
+            right: 17px;
+            bottom: 17px;
+            transform: translate3d(0, 0, 0) scale(0.6);
+            transition: transform 0.44s cubic-bezier(0.34, 1.42, 0.64, 1);
+            transition-delay: calc(var(--i, 0) * 35ms);
+        }
+
+        .gooey-menu.is-open .gooey-blob-item {
+            transform: translate3d(var(--tx), var(--ty), 0) scale(1);
+        }
+
+        .gooey-menu:not(.is-open) .gooey-blob-item {
+            transition-duration: 0.34s;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-delay: calc((4 - var(--i, 0)) * 22ms);
+        }
+
+        /* Unfiltered interactive button layer with glassy specular sheen */
+        .gooey-buttons {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .gooey-trigger {
+            position: absolute;
+            right: 12px;
+            bottom: 12px;
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            color: var(--gooey-fg);
+            pointer-events: auto;
+            z-index: 3;
+            background: linear-gradient(145deg, var(--gooey-sheen) 0%, transparent 55%);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            box-shadow: var(--gooey-shadow), inset 0 1.5px 1px var(--gooey-sheen);
+            transition: transform 0.36s cubic-bezier(0.34, 1.45, 0.64, 1);
+        }
+
+        .gooey-trigger:focus-visible,
+        .gooey-item:focus-visible {
+            box-shadow: 0 0 0 3px var(--g-blue), var(--gooey-shadow);
+        }
+
+        .gooey-trigger .material-icons-outlined {
+            font-size: 24px;
+            transition: transform 0.36s cubic-bezier(0.34, 1.45, 0.64, 1);
+        }
+
+        .gooey-menu.is-open .gooey-trigger {
+            transform: scale(0.94);
+        }
+
+        .gooey-menu.is-open .gooey-trigger .material-icons-outlined {
+            transform: rotate(45deg);
+        }
+
+        .gooey-item {
+            position: absolute;
+            right: 17px;
+            bottom: 17px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            color: var(--gooey-fg);
+            z-index: 2;
+            background: linear-gradient(145deg, var(--gooey-sheen) 0%, transparent 60%);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            opacity: 0;
+            pointer-events: none;
+            transform: translate3d(0, 0, 0) scale(0.6);
+            will-change: transform, opacity;
+            transition:
+                transform 0.44s cubic-bezier(0.34, 1.42, 0.64, 1),
+                opacity 0.24s ease;
+            transition-delay: calc(var(--i, 0) * 35ms);
+        }
+
+        .gooey-item .material-icons-outlined {
+            font-size: 20px;
+        }
+
+        .gooey-menu.is-open .gooey-item {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translate3d(var(--tx), var(--ty), 0) scale(1);
+        }
+
+        .gooey-menu:not(.is-open) .gooey-item {
+            transition-duration: 0.34s, 0.16s;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1), ease;
+            transition-delay: calc((4 - var(--i, 0)) * 22ms), 0ms;
+        }
+
+        .gooey-item:active {
+            transform: translate3d(var(--tx), var(--ty), 0) scale(0.9);
+        }
+
+        /* Arc coordinates (5 items fanning 180deg -> 90deg, radius ~118px) */
+        .gooey-menu {
+            --r: 118px;
+        }
+        .gooey-pos-0 { --i: 0; --tx: calc(var(--r) * -1);      --ty: 0px; }
+        .gooey-pos-1 { --i: 1; --tx: calc(var(--r) * -0.9239); --ty: calc(var(--r) * -0.3827); }
+        .gooey-pos-2 { --i: 2; --tx: calc(var(--r) * -0.7071); --ty: calc(var(--r) * -0.7071); }
+        .gooey-pos-3 { --i: 3; --tx: calc(var(--r) * -0.3827); --ty: calc(var(--r) * -0.9239); }
+        .gooey-pos-4 { --i: 4; --tx: 0px;                      --ty: calc(var(--r) * -1); }
+
+        @media (prefers-reduced-motion: reduce) {
+            .gooey-blobs {
+                filter: none !important;
+            }
+            .gooey-blob-item {
+                transform: translate3d(var(--tx), var(--ty), 0) scale(1) !important;
+                opacity: 0;
+                transition: opacity 0.2s ease !important;
+                transition-delay: 0ms !important;
+            }
+            .gooey-menu.is-open .gooey-blob-item {
+                opacity: 1;
+            }
+            .gooey-item {
+                transform: translate3d(var(--tx), var(--ty), 0) scale(1) !important;
+                transition: opacity 0.2s ease !important;
+                transition-delay: 0ms !important;
+            }
+            .gooey-trigger,
+            .gooey-trigger .material-icons-outlined,
+            .gooey-blob-main {
+                transition: none !important;
+            }
+        }
+
+        /* ==========================================================================
+           10. RESPONSIVE MEDIA QUERIES (FLUID LAYOUTS & GOOEY MENU FOR MOBILE/TABLET)
         ========================================================================== */
         .mobile-quick-bar {
             display: none;
@@ -1606,140 +1716,19 @@
             }
         }
 
-        /* LIQUID GLASSSELECT MOBILE MENU SURFACE */
-        @media (max-width: 860px) {
-            .brand-sub {
-                display: none;
-            }
-
-            .glass-neck-svg {
-                display: block;
-            }
-
+        /* Tablet & Phone: hide top nav links, show bottom-right Gooey Arc Menu */
+        @media (max-width: 1024px) {
             .nav-menu {
-                position: fixed;
-                top: 68px;
-                right: 12px;
-                left: auto;
-                width: min(260px, calc(100vw - 24px));
-                background: var(--lg-surface-bg);
-                backdrop-filter: blur(22px) saturate(165%);
-                -webkit-backdrop-filter: blur(22px) saturate(165%);
-                border: 1px solid var(--lg-surface-border);
-                border-radius: 24px;
-                padding: 8px;
-                flex-direction: column;
-                align-items: stretch;
-                gap: 3px;
-                box-shadow: var(--lg-surface-shadow);
-                opacity: 0;
-                visibility: hidden;
-                pointer-events: none;
-                max-height: calc(100vh - 96px);
-                overflow-y: auto;
-                z-index: 101;
-                will-change: transform, opacity, filter;
-                transform-origin: top right;
-            }
-
-            .nav-menu[data-open="true"] {
-                visibility: visible;
-                pointer-events: auto;
-            }
-
-            .nav-menu[data-ending-style="true"] {
-                visibility: visible;
-                pointer-events: none;
-            }
-
-            .nav-menu li {
-                list-style: none;
-            }
-
-            .nav-menu a {
-                padding: 10px 14px;
-                font-size: 0.92rem;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                border-radius: 16px;
-                color: var(--text-dark);
-                opacity: 0;
-                transform: translateY(-8px) scale(0.96);
-                transition:
-                    opacity 0.24s cubic-bezier(0.22, 1, 0.36, 1),
-                    transform 0.28s cubic-bezier(0.22, 1.15, 0.36, 1),
-                    background-color 0.16s ease,
-                    color 0.16s ease;
-                transition-delay: calc(var(--glass-i, 0) * 32ms + 90ms);
-            }
-
-            .nav-menu[data-open="true"] a {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-
-            .nav-menu[data-ending-style="true"] a {
-                opacity: 0;
-                transform: translateY(-6px) scale(0.96);
-                transition-duration: 0.14s;
-                transition-delay: calc((6 - var(--glass-i, 0)) * 18ms);
-            }
-
-            .nav-menu a:hover,
-            .nav-menu a:focus-visible {
-                background: rgba(66, 133, 244, 0.12);
-                color: var(--g-blue);
-                outline: none;
-            }
-
-            .nav-menu a.active {
-                background: rgba(66, 133, 244, 0.14);
-                color: var(--g-blue);
-                font-weight: 600;
-            }
-
-            .nav-menu a.active::after {
                 display: none;
             }
-
-            .nav-menu a.active::before {
-                content: '';
-                width: 6px;
-                height: 6px;
-                border-radius: 50%;
-                background: var(--g-blue);
-                order: 2;
-                flex-shrink: 0;
-            }
-
-            .nav-menu a.nav-learning-btn {
-                justify-content: center;
-                margin-top: 4px;
-                border-radius: 16px;
-                padding: 10px 14px;
-            }
-
-            .nav-menu a.nav-learning-btn::before {
-                display: none;
-            }
-
-            .mobile-toggle {
-                display: inline-flex;
+            .gooey-menu {
+                display: block;
             }
         }
 
-        /* Reduced Motion Support */
-        @media (prefers-reduced-motion: reduce) {
-            .glass-neck-svg {
-                display: none !important;
-            }
-            .nav-menu,
-            .nav-menu a,
-            .mobile-toggle,
-            .mobile-toggle-chevron {
-                transition: none !important;
-                animation: none !important;
+        @media (max-width: 860px) {
+            .brand-sub {
+                display: none;
             }
         }
 
@@ -1867,6 +1856,17 @@
                 left: 14px;
                 right: 14px;
             }
+            /* Less blur on phones & sit cleanly above mobile-quick-bar */
+            .gooey-menu {
+                right: 14px;
+                bottom: 72px;
+                width: 196px;
+                height: 196px;
+                --r: 108px;
+            }
+            .gooey-blobs {
+                filter: url(#gooey-filter-phone);
+            }
         }
 
         @media (max-width: 480px) {
@@ -1883,15 +1883,6 @@
             .theme-cycle-btn {
                 padding: 5px 9px;
                 font-size: 0.72rem;
-            }
-            .mobile-toggle {
-                height: 32px;
-                padding: 0 9px 0 11px;
-                font-size: 0.74rem;
-                gap: 4px;
-            }
-            .mobile-toggle-label {
-                min-width: 30px;
             }
             .cmp {
                 aspect-ratio: 1 / 1.15;
@@ -1947,9 +1938,20 @@
         <div class="blob blob-4"></div>
     </div>
 
-    <!-- Liquid Glass Connecting Neck Overlay (Mobile GlassSelect) -->
-    <svg class="glass-neck-svg" id="glassNeckSvg" aria-hidden="true">
-        <path class="glass-neck-path" id="glassNeckPath" d="" />
+    <!-- SVG Gooey Filters (Medium gooeyness; lighter blur on phones) -->
+    <svg class="gooey-svg-defs" aria-hidden="true">
+        <defs>
+            <filter id="gooey-filter-tablet">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur" />
+                <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 19 -9" result="goo" />
+                <feComposite in="SourceGraphic" in2="goo" operator="atop" />
+            </filter>
+            <filter id="gooey-filter-phone">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur" />
+                <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -8.5" result="goo" />
+                <feComposite in="SourceGraphic" in2="goo" operator="atop" />
+            </filter>
+        </defs>
     </svg>
 
     <!-- ==========================================================================
@@ -1967,19 +1969,19 @@
             <span class="brand-sub">The Keyword</span>
         </a>
 
-        <ul class="nav-menu" id="navMenu" role="listbox" aria-label="Site Navigation" data-glass-popup>
-            <li><a href="#about" class="active" role="option" aria-selected="true" style="--glass-i: 0;" data-i18n="nav_about">About</a></li>
-            <li><a href="#skills" role="option" aria-selected="false" style="--glass-i: 1;" data-i18n="nav_skills">Skills</a></li>
-            <li><a href="#labs" role="option" aria-selected="false" style="--glass-i: 2;" data-i18n="nav_labs">Labs</a></li>
-            <li><a href="#certifications" role="option" aria-selected="false" style="--glass-i: 3;" data-i18n="nav_certs">Certifications</a></li>
+        <ul class="nav-menu" id="navMenu">
+            <li><a href="#about" class="active" data-i18n="nav_about">About</a></li>
+            <li><a href="#skills" data-i18n="nav_skills">Skills</a></li>
+            <li><a href="#labs" data-i18n="nav_labs">Labs</a></li>
+            <li><a href="#certifications" data-i18n="nav_certs">Certifications</a></li>
             <li>
-                <a href="learning.html" class="nav-learning-btn" role="option" aria-selected="false" style="--glass-i: 4;">
+                <a href="learning.html" class="nav-learning-btn">
                     <span class="live-db-dot"></span>
                     <span data-i18n="nav_learning">Learning ↗</span>
                 </a>
             </li>
-            <li><a href="#documents" role="option" aria-selected="false" style="--glass-i: 5;" data-i18n="nav_docs">Documents</a></li>
-            <li><a href="#contact" role="option" aria-selected="false" style="--glass-i: 6;" data-i18n="nav_contact">Contact</a></li>
+            <li><a href="#documents" data-i18n="nav_docs">Documents</a></li>
+            <li><a href="#contact" data-i18n="nav_contact">Contact</a></li>
         </ul>
 
         <div class="header-right">
@@ -1995,23 +1997,6 @@
 
             <button type="button" class="theme-cycle-btn" id="themeBtn" onclick="toggleThemeManual()">
                 ◐ Tone
-            </button>
-
-            <button
-                type="button"
-                class="mobile-toggle"
-                id="mobileToggle"
-                role="combobox"
-                aria-label="Navigation Menu"
-                aria-haspopup="listbox"
-                aria-expanded="false"
-                aria-controls="navMenu"
-                data-glass-host
-            >
-                <span class="mobile-toggle-label" id="mobileToggleLabel">About</span>
-                <svg class="mobile-toggle-chevron" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                    <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
             </button>
         </div>
     </header>
@@ -2251,6 +2236,49 @@
 
     </main>
 
+    <!-- Gooey Arc Action Menu (Mobile & Tablet Only — Bottom Right) -->
+    <nav class="gooey-menu" id="gooeyMenu" aria-label="Quick Navigation Menu">
+        <!-- Filtered monochrome blob layer -->
+        <div class="gooey-blobs" aria-hidden="true">
+            <span class="gooey-blob gooey-blob-item gooey-pos-0"></span>
+            <span class="gooey-blob gooey-blob-item gooey-pos-1"></span>
+            <span class="gooey-blob gooey-blob-item gooey-pos-2"></span>
+            <span class="gooey-blob gooey-blob-item gooey-pos-3"></span>
+            <span class="gooey-blob gooey-blob-item gooey-pos-4"></span>
+            <span class="gooey-blob gooey-blob-main"></span>
+        </div>
+
+        <!-- Unfiltered real buttons for crisp icons & keyboard accessibility -->
+        <div class="gooey-buttons" id="gooeyItems">
+            <button type="button" class="gooey-item gooey-pos-0" data-target="#about" aria-label="About" title="About" tabindex="-1">
+                <span class="material-icons-outlined" aria-hidden="true">person</span>
+            </button>
+            <button type="button" class="gooey-item gooey-pos-1" data-target="#skills" aria-label="Skills" title="Skills" tabindex="-1">
+                <span class="material-icons-outlined" aria-hidden="true">code</span>
+            </button>
+            <button type="button" class="gooey-item gooey-pos-2" data-target="#labs" aria-label="Labs" title="Labs" tabindex="-1">
+                <span class="material-icons-outlined" aria-hidden="true">dns</span>
+            </button>
+            <button type="button" class="gooey-item gooey-pos-3" data-target="learning.html" aria-label="Learning" title="Learning" tabindex="-1">
+                <span class="material-icons-outlined" aria-hidden="true">school</span>
+            </button>
+            <button type="button" class="gooey-item gooey-pos-4" data-target="#contact" aria-label="Contact" title="Contact" tabindex="-1">
+                <span class="material-icons-outlined" aria-hidden="true">mail</span>
+            </button>
+
+            <button
+                type="button"
+                class="gooey-trigger"
+                id="gooeyTrigger"
+                aria-label="Open Navigation Menu"
+                aria-expanded="false"
+                aria-controls="gooeyItems"
+            >
+                <span class="material-icons-outlined" aria-hidden="true">add</span>
+            </button>
+        </div>
+    </nav>
+
     <!-- Mobile Quick Bar for Phone Screens -->
     <nav class="mobile-quick-bar glass" aria-label="Mobile Quick Navigation">
         <a href="#about" class="mobile-quick-link">About</a>
@@ -2313,17 +2341,14 @@
                 }, reducedMotion ? 260 : 850);
             }
 
-            // Auto-reveal the site smoothly after the cascade settles
             const holdTime = reducedMotion ? 1100 : 3100;
             const autoTimer = setTimeout(dismissIntro, holdTime);
 
-            // Allow early dismiss on tap/click
             intro.addEventListener("click", () => {
                 clearTimeout(autoTimer);
                 dismissIntro();
             });
 
-            // Clean up immediately if returning via browser Back button (bfcache)
             window.addEventListener("pageshow", (e) => {
                 if (e.persisted && intro.parentNode) {
                     clearTimeout(autoTimer);
@@ -2877,7 +2902,6 @@ passwordauthentication no`
                 }
             });
             renderAbout();
-            if (window.syncGlassSelectLabel) window.syncGlassSelectLabel();
             if (window.updateScrollFillText) window.updateScrollFillText(translations[lang].srf_statement);
         }
 
@@ -2967,206 +2991,24 @@ passwordauthentication no`
         })();
 
         /* ==========================================================================
-           LIQUID GLASSSELECT / GLASSPOPUP ENGINE (MOBILE NAVIGATION ONLY)
+           GOOEY ARC MENU CONTROLLER (MOBILE & TABLET ONLY)
         ========================================================================== */
-        (function initLiquidGlassMobileMenu() {
-            const trigger = document.getElementById("mobileToggle");
-            const triggerLabel = document.getElementById("mobileToggleLabel");
-            const menu = document.getElementById("navMenu");
-            const neckSvg = document.getElementById("glassNeckSvg");
-            const neckPath = document.getElementById("glassNeckPath");
-            if (!trigger || !menu || !neckPath) return;
+        (function initGooeyMenu() {
+            const menu = document.getElementById("gooeyMenu");
+            const trigger = document.getElementById("gooeyTrigger");
+            if (!menu || !trigger) return;
 
-            const items = Array.from(menu.querySelectorAll("a"));
-            const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-            const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
-
+            const items = Array.from(menu.querySelectorAll(".gooey-item"));
             let isOpen = false;
-            let progress = 0;
-            let target = 0;
-            let rafId = 0;
-            let lastTime = 0;
-            let typeTimer = 0;
-
-            const DURATION_MS = 460;
-            const SNAP_AT = 0.56;
-            const GAP_PX = 12;
-
-            function isMobileViewport() {
-                return window.innerWidth <= 860;
-            }
-
-            function typeLabel(text) {
-                clearTimeout(typeTimer);
-                const clean = text.replace(/\s*↗\s*$/, "").trim();
-                if (reducedMotion) {
-                    triggerLabel.textContent = clean;
-                    return;
-                }
-                let idx = 0;
-                triggerLabel.textContent = "";
-                function nextChar() {
-                    idx++;
-                    triggerLabel.textContent = clean.slice(0, idx);
-                    if (idx < clean.length) {
-                        typeTimer = setTimeout(nextChar, 28);
-                    }
-                }
-                nextChar();
-            }
-
-            window.syncGlassSelectLabel = function() {
-                const active = menu.querySelector("a.active") || items[0];
-                if (active) {
-                    triggerLabel.textContent = active.textContent.replace(/\s*↗\s*$/, "").trim();
-                }
-            };
-
-            function drawFrame(p) {
-                if (!isMobileViewport()) {
-                    menu.style.transform = "";
-                    menu.style.opacity = "";
-                    trigger.style.transform = "";
-                    neckPath.setAttribute("d", "");
-                    return;
-                }
-
-                const btnRect = trigger.getBoundingClientRect();
-                const topFinal = btnRect.bottom + GAP_PX;
-                menu.style.top = `${topFinal}px`;
-
-                const rightOffset = Math.max(12, window.innerWidth - btnRect.right);
-                menu.style.right = `${rightOffset}px`;
-
-                const menuWidth = menu.offsetWidth || 240;
-                const menuHeight = menu.offsetHeight || 280;
-
-                const easeOut = 1 - Math.pow(1 - p, 3);
-                const scaleX = (btnRect.width / menuWidth) + (1 - btnRect.width / menuWidth) * easeOut;
-                const scaleY = (btnRect.height / menuHeight) + (1 - btnRect.height / menuHeight) * easeOut;
-
-                let menuJoltY = 0;
-                let btnJoltY = 0;
-                let btnScale = 1;
-
-                if (p > SNAP_AT) {
-                    const u = (p - SNAP_AT) / (1 - SNAP_AT);
-                    const damp = Math.exp(-5.5 * u) * Math.sin(u * Math.PI * 2.2);
-                    menuJoltY = damp * 5.5;
-                    btnJoltY = -damp * 3.2;
-                    btnScale = 1 + damp * 0.035;
-                } else {
-                    const pull = Math.sin((p / SNAP_AT) * Math.PI * 0.5);
-                    btnJoltY = pull * 2.2;
-                    btnScale = 1 - pull * 0.025;
-                }
-
-                const startOffsetY = -(GAP_PX + btnRect.height * 0.65) * (1 - easeOut);
-                const currentY = startOffsetY + menuJoltY;
-
-                menu.style.opacity = clamp(p * 2.4, 0, 1).toFixed(3);
-                menu.style.transform = `translate3d(0, ${currentY.toFixed(2)}px, 0) scale(${scaleX.toFixed(4)}, ${scaleY.toFixed(4)})`;
-                trigger.style.transform = `translate3d(0, ${btnJoltY.toFixed(2)}px, 0) scale(${btnScale.toFixed(4)})`;
-
-                if (p > 0.04 && p < SNAP_AT) {
-                    const stretch = p / SNAP_AT;
-                    const cx = btnRect.left + btnRect.width / 2;
-                    const y1 = btnRect.bottom - 5 + btnJoltY;
-                    const y2 = topFinal + currentY + 8;
-
-                    if (y2 > y1 + 1) {
-                        const ym = (y1 + y2) / 2;
-                        const w1 = (btnRect.width * 0.36) * (1 - stretch * 0.45);
-                        const w2 = (btnRect.width * 0.46) * (1 - stretch * 0.25);
-                        const waist = Math.max(1.5, w1 * Math.pow(1 - stretch, 1.45));
-
-                        const d = [
-                            `M ${(cx - w1).toFixed(2)} ${y1.toFixed(2)}`,
-                            `Q ${(cx - waist).toFixed(2)} ${ym.toFixed(2)} ${(cx - w2).toFixed(2)} ${y2.toFixed(2)}`,
-                            `L ${(cx + w2).toFixed(2)} ${y2.toFixed(2)}`,
-                            `Q ${(cx + waist).toFixed(2)} ${ym.toFixed(2)} ${(cx + w1).toFixed(2)} ${y1.toFixed(2)}`,
-                            "Z"
-                        ].join(" ");
-
-                        neckPath.setAttribute("d", d);
-                        neckPath.style.opacity = clamp(1 - Math.pow(stretch, 4), 0, 1).toFixed(3);
-                    } else {
-                        neckPath.setAttribute("d", "");
-                    }
-                } else {
-                    neckPath.setAttribute("d", "");
-                }
-            }
-
-            function step(now) {
-                if (!lastTime) lastTime = now;
-                const dt = Math.min(40, now - lastTime);
-                lastTime = now;
-
-                const dir = target > progress ? 1 : -1;
-                const speed = dir > 0 ? 1 / DURATION_MS : 1 / (DURATION_MS * 0.85);
-                progress = clamp(progress + dir * dt * speed, 0, 1);
-
-                drawFrame(progress);
-
-                if (progress === target) {
-                    rafId = 0;
-                    lastTime = 0;
-                    if (progress === 0) {
-                        menu.removeAttribute("data-open");
-                        menu.removeAttribute("data-ending-style");
-                        menu.style.transform = "";
-                        menu.style.opacity = "";
-                        trigger.style.transform = "";
-                        neckPath.setAttribute("d", "");
-                    } else {
-                        menu.style.transform = "translate3d(0, 0, 0) scale(1, 1)";
-                        trigger.style.transform = "";
-                        neckPath.setAttribute("d", "");
-                    }
-                    return;
-                }
-
-                rafId = requestAnimationFrame(step);
-            }
 
             function setOpen(next) {
-                if (!isMobileViewport()) return;
                 isOpen = next;
+                menu.classList.toggle("is-open", isOpen);
                 trigger.setAttribute("aria-expanded", String(isOpen));
-
-                if (reducedMotion) {
-                    progress = isOpen ? 1 : 0;
-                    target = progress;
-                    if (isOpen) {
-                        menu.setAttribute("data-open", "true");
-                        menu.removeAttribute("data-ending-style");
-                        menu.style.opacity = "1";
-                        menu.style.transform = "none";
-                    } else {
-                        menu.removeAttribute("data-open");
-                        menu.removeAttribute("data-ending-style");
-                        menu.style.opacity = "";
-                        menu.style.transform = "";
-                    }
-                    neckPath.setAttribute("d", "");
-                    return;
-                }
-
-                if (isOpen) {
-                    menu.removeAttribute("data-ending-style");
-                    menu.setAttribute("data-open", "true");
-                    target = 1;
-                } else {
-                    menu.removeAttribute("data-open");
-                    menu.setAttribute("data-ending-style", "true");
-                    target = 0;
-                }
-
-                if (!rafId) {
-                    lastTime = 0;
-                    rafId = requestAnimationFrame(step);
-                }
+                trigger.setAttribute("aria-label", isOpen ? "Close Navigation Menu" : "Open Navigation Menu");
+                items.forEach(btn => {
+                    btn.tabIndex = isOpen ? 0 : -1;
+                });
             }
 
             trigger.addEventListener("click", (e) => {
@@ -3174,79 +3016,36 @@ passwordauthentication no`
                 setOpen(!isOpen);
             });
 
-            items.forEach((link) => {
-                link.addEventListener("click", () => {
-                    items.forEach((el) => {
-                        el.classList.remove("active");
-                        el.setAttribute("aria-selected", "false");
-                    });
-                    link.classList.add("active");
-                    link.setAttribute("aria-selected", "true");
-                    typeLabel(link.textContent);
-                    if (isOpen) setOpen(false);
+            items.forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const target = btn.getAttribute("data-target");
+                    setOpen(false);
+                    if (!target) return;
+                    if (target === "learning.html") {
+                        if (window.triggerLearningShatter) {
+                            window.triggerLearningShatter(target);
+                        } else {
+                            window.location.href = target;
+                        }
+                    } else if (target.startsWith("#")) {
+                        const section = document.querySelector(target);
+                        if (section) {
+                            section.scrollIntoView({ behavior: "smooth" });
+                        }
+                    }
                 });
             });
 
             document.addEventListener("pointerdown", (e) => {
-                if (isOpen && !menu.contains(e.target) && !trigger.contains(e.target)) {
+                if (isOpen && !menu.contains(e.target)) {
                     setOpen(false);
                 }
             });
 
-            trigger.addEventListener("keydown", (e) => {
-                if (!isMobileViewport()) return;
-                if (e.key === "ArrowDown" || e.key === "ArrowUp" || e.key === "Enter" || e.key === " ") {
-                    if (!isOpen) {
-                        e.preventDefault();
-                        setOpen(true);
-                        const activeIdx = Math.max(0, items.findIndex((el) => el.classList.contains("active")));
-                        items[activeIdx]?.focus();
-                    }
-                } else if (e.key === "Escape" && isOpen) {
-                    e.preventDefault();
-                    setOpen(false);
-                }
-            });
-
-            menu.addEventListener("keydown", (e) => {
-                if (!isMobileViewport() || !isOpen) return;
-                const currentIdx = items.indexOf(document.activeElement);
-                if (e.key === "ArrowDown") {
-                    e.preventDefault();
-                    items[(currentIdx + 1) % items.length]?.focus();
-                } else if (e.key === "ArrowUp") {
-                    e.preventDefault();
-                    items[(currentIdx - 1 + items.length) % items.length]?.focus();
-                } else if (e.key === "Home") {
-                    e.preventDefault();
-                    items[0]?.focus();
-                } else if (e.key === "End") {
-                    e.preventDefault();
-                    items[items.length - 1]?.focus();
-                } else if (e.key === "Escape") {
-                    e.preventDefault();
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "Escape" && isOpen) {
                     setOpen(false);
                     trigger.focus();
-                }
-            });
-
-            window.addEventListener("resize", () => {
-                if (!isMobileViewport()) {
-                    isOpen = false;
-                    progress = 0;
-                    target = 0;
-                    if (rafId) {
-                        cancelAnimationFrame(rafId);
-                        rafId = 0;
-                    }
-                    menu.removeAttribute("data-open");
-                    menu.removeAttribute("data-ending-style");
-                    menu.style.cssText = "";
-                    trigger.style.transform = "";
-                    trigger.setAttribute("aria-expanded", "false");
-                    neckPath.setAttribute("d", "");
-                } else if (isOpen) {
-                    drawFrame(progress);
                 }
             });
         })();
@@ -3666,6 +3465,8 @@ passwordauthentication no`
 
                 requestAnimationFrame(animate);
             }
+
+            window.triggerLearningShatter = triggerShatterTo;
 
             document.addEventListener("click", (e) => {
                 const link = e.target.closest('a[href="learning.html"]');
