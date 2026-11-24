@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bg-tone="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
     <meta name="description" content="Yashar Kamran — Network & Systems Portfolio | Ausbildung Fachinformatiker">
     <title>The Keyword | Yashar Kamran — Network & Cybersecurity</title>
 
-    <!-- Google Fonts: Inter, Outfit, JetBrains Mono -->
+    <!-- Google Fonts: Inter, Outfit, JetBrains Mono & Great Vibes (Signature) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Material Icons -->
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
 
@@ -36,6 +36,7 @@
             --font-sans: 'Inter', sans-serif;
             --font-brand: 'Outfit', sans-serif;
             --font-mono: 'JetBrains Mono', monospace;
+            --font-signature: 'Great Vibes', cursive;
 
             /* Compare Slider Variables */
             --fill-slab: rgba(255, 255, 255, 0.92);
@@ -45,24 +46,46 @@
             --srf-dim: rgba(32, 33, 36, 0.22);
             --srf-lit: #202124;
             --srf-highlight: #4285F4;
+
+            /* Scroll-Driven Translucent Dusk Background Token */
+            --scroll-bg-color: rgba(20, 25, 38, 0.78);
         }
 
-        html[data-theme="dark"] {
+        html[data-theme="dark"],
+        html[data-bg-tone="dark"] {
             --text-dark: #f1f3f4;
-            --text-gray: #9aa0a6;
-            --glass-bg: rgba(32, 33, 36, 0.65);
-            --glass-bg-hover: rgba(45, 47, 51, 0.85);
-            --glass-solid: rgba(28, 30, 33, 0.96);
-            --glass-border: rgba(255, 255, 255, 0.12);
-            --glass-shadow: 0 10px 34px 0 rgba(0, 0, 0, 0.35);
-            --glass-shadow-hover: 0 16px 46px 0 rgba(0, 0, 0, 0.5);
+            --text-gray: #a8b0be;
+            --glass-bg: rgba(24, 27, 38, 0.52);
+            --glass-bg-hover: rgba(34, 38, 52, 0.74);
+            --glass-solid: rgba(20, 23, 32, 0.95);
+            --glass-border: rgba(255, 255, 255, 0.13);
+            --glass-shadow: 0 10px 34px 0 rgba(0, 0, 0, 0.36);
+            --glass-shadow-hover: 0 16px 46px 0 rgba(0, 0, 0, 0.52);
 
             --fill-slab: rgba(45, 47, 51, 0.95);
             --fill-on: #ffffff;
 
             /* Scroll-Driven Text Fill Dark Tokens */
-            --srf-dim: rgba(241, 243, 244, 0.22);
+            --srf-dim: rgba(241, 243, 244, 0.24);
             --srf-lit: #f1f3f4;
+            --srf-highlight: #60a5fa;
+        }
+
+        html[data-bg-tone="light"] {
+            --text-dark: #202124;
+            --text-gray: #5f6368;
+            --glass-bg: rgba(255, 255, 255, 0.58);
+            --glass-bg-hover: rgba(255, 255, 255, 0.84);
+            --glass-solid: rgba(255, 255, 255, 0.94);
+            --glass-border: rgba(255, 255, 255, 0.75);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+            --glass-shadow-hover: 0 14px 42px 0 rgba(31, 38, 135, 0.13);
+
+            --fill-slab: rgba(255, 255, 255, 0.92);
+            --fill-on: #202124;
+
+            --srf-dim: rgba(32, 33, 36, 0.22);
+            --srf-lit: #202124;
             --srf-highlight: #4285F4;
         }
 
@@ -83,17 +106,13 @@
         body {
             font-family: var(--font-sans);
             color: var(--text-dark);
-            background-color: #f4f6f9;
+            background-color: #0e1118;
             overflow-x: clip;
             width: 100%;
             min-height: 100vh;
             line-height: 1.65;
-            transition: background-color 0.35s ease, color 0.35s ease;
+            transition: color 0.35s ease;
             -webkit-font-smoothing: antialiased;
-        }
-
-        html[data-theme="dark"] body {
-            background-color: #121316;
         }
 
         h1, h2, h3, h4, .brand-font {
@@ -144,14 +163,10 @@
             align-items: center;
             justify-content: center;
             padding: clamp(20px, 6vw, 48px);
-            background: #f4f6f9;
+            background: #121622;
             overflow: hidden;
             opacity: 1;
             transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.8s ease;
-        }
-
-        html[data-theme="dark"] .page-intro {
-            background: #121316;
         }
 
         .page-intro::before,
@@ -160,7 +175,7 @@
             position: absolute;
             border-radius: 50%;
             filter: blur(100px);
-            opacity: 0.36;
+            opacity: 0.24;
             pointer-events: none;
         }
 
@@ -178,11 +193,6 @@
             background: var(--g-green);
             bottom: -12%;
             right: -8%;
-        }
-
-        html[data-theme="dark"] .page-intro::before,
-        html[data-theme="dark"] .page-intro::after {
-            opacity: 0.22;
         }
 
         .page-intro.is-exiting {
@@ -286,7 +296,7 @@
         }
 
         /* ==========================================================================
-           02. AMBIENT BACKGROUND BLOBS FOR THE GLASS EFFECT
+           02. AMBIENT BACKGROUND BLOBS & SCROLL-DRIVEN TRANSLUCENT DUSK LAYER
         ========================================================================== */
         .ambient-bg {
             position: fixed;
@@ -294,27 +304,31 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            z-index: -1;
+            z-index: -2;
             overflow: hidden;
-            background: #f8f9fa;
-            transition: background 0.35s ease;
+            background: #0e1118;
             pointer-events: none;
         }
 
-        html[data-theme="dark"] .ambient-bg {
-            background: #121316;
+        .scroll-dusk-layer {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+            background-color: var(--scroll-bg-color);
+            backdrop-filter: blur(26px);
+            -webkit-backdrop-filter: blur(26px);
+            will-change: background-color;
         }
 
         .blob {
             position: absolute;
             border-radius: 50%;
-            filter: blur(90px);
-            opacity: 0.42;
+            filter: blur(95px);
+            opacity: 0.34;
             animation: float 15s infinite alternate ease-in-out;
-        }
-
-        html[data-theme="dark"] .blob {
-            opacity: 0.24;
         }
 
         .blob-1 { width: clamp(280px, 45vw, 500px); height: clamp(280px, 45vw, 500px); background: var(--g-blue); top: -10%; left: -5%; }
@@ -329,8 +343,8 @@
 
         .glass {
             background: var(--glass-bg);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
             border: 1px solid var(--glass-border);
             box-shadow: var(--glass-shadow);
         }
@@ -453,10 +467,15 @@
             gap: 6px;
             padding: 6px 14px;
             border-radius: 50px;
-            background: rgba(66, 133, 244, 0.12);
-            border: 1px solid rgba(66, 133, 244, 0.35);
-            color: var(--g-blue);
+            background: rgba(66, 133, 244, 0.16);
+            border: 1px solid rgba(66, 133, 244, 0.4);
+            color: #7ab0ff;
             font-weight: 600;
+        }
+
+        html[data-bg-tone="light"] .nav-menu a.nav-learning-btn {
+            background: rgba(66, 133, 244, 0.12);
+            color: var(--g-blue);
         }
 
         .nav-menu a.nav-learning-btn:hover {
@@ -477,46 +496,245 @@
         .header-right {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        /* ==========================================================================
+           03B. EXPANDING SEARCH (OPENS TOWARD LEFT, CLIP-PATH REVEAL, LIVE RESULTS)
+           Settings: Opens toward=Left, Speed=Normal, Closes when you leave it=on
+        ========================================================================== */
+        .exp-search {
+            position: relative;
+            width: 36px;
+            height: 36px;
             flex-shrink: 0;
         }
 
-        .search-bar {
+        .exp-search-trigger {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--glass-border);
+            color: var(--text-dark);
+            transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+
+        html[data-bg-tone="light"] .exp-search-trigger {
+            background: rgba(255, 255, 255, 0.55);
+        }
+
+        .exp-search-trigger:hover,
+        .exp-search-trigger:focus-visible {
+            border-color: var(--g-blue);
+            color: var(--g-blue);
+            box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.25);
+        }
+
+        .exp-search-trigger .material-icons-outlined {
+            font-size: 19px;
+        }
+
+        /* Revealed purely via clip-path from the icon's right edge toward the left */
+        .exp-search-field {
+            position: absolute;
+            top: 50%;
+            right: 0;
+            width: min(300px, calc(100vw - 24px));
+            height: 38px;
+            transform: translateY(-50%);
+            z-index: 30;
             display: flex;
             align-items: center;
-            background: rgba(255, 255, 255, 0.55);
-            border: 1px solid var(--glass-border);
-            padding: 6px 12px;
-            border-radius: 50px;
-            gap: 6px;
-            width: 170px;
-            transition: all 0.3s;
-        }
-
-        html[data-theme="dark"] .search-bar {
-            background: rgba(255, 255, 255, 0.07);
-        }
-
-        .search-bar:focus-within {
+            gap: 8px;
+            padding: 0 8px 0 13px;
+            border-radius: 999px;
             background: var(--glass-solid);
-            width: 210px;
-            border-color: var(--g-blue);
-            box-shadow: 0 4px 12px rgba(66, 133, 244, 0.12);
+            backdrop-filter: blur(22px);
+            -webkit-backdrop-filter: blur(22px);
+            border: 1px solid rgba(66, 133, 244, 0.5);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+            clip-path: inset(0 0 0 calc(100% - 36px) round 999px);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            will-change: clip-path, opacity;
+            transition:
+                clip-path 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 0.2s ease,
+                visibility 0s linear 0.32s;
         }
 
-        .search-bar input {
+        .exp-search.is-open .exp-search-field {
+            clip-path: inset(0 0 0 0% round 999px);
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transition:
+                clip-path 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 0.18s ease,
+                visibility 0s linear 0s;
+        }
+
+        .exp-search-icon {
+            color: var(--g-blue);
+            font-size: 18px;
+            flex-shrink: 0;
+            pointer-events: none;
+        }
+
+        .exp-search-input {
+            flex: 1;
+            min-width: 0;
             border: none;
             background: transparent;
             outline: none;
-            width: 100%;
             color: var(--text-dark);
             font-family: var(--font-sans);
+            font-size: 0.84rem;
+        }
+
+        .exp-search-input::placeholder {
+            color: var(--text-gray);
+        }
+
+        .exp-search-close {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-gray);
+            flex-shrink: 0;
+            transition: background-color 0.18s ease, color 0.18s ease;
+        }
+
+        .exp-search-close:hover,
+        .exp-search-close:focus-visible {
+            background: rgba(234, 67, 53, 0.18);
+            color: var(--text-dark);
+        }
+
+        .exp-search-close .material-icons-outlined {
+            font-size: 16px;
+        }
+
+        /* Live Search Results Dropdown */
+        .exp-search-results {
+            position: absolute;
+            top: calc(100% + 10px);
+            right: 0;
+            width: min(340px, calc(100vw - 24px));
+            max-height: min(380px, 60vh);
+            overflow-y: auto;
+            z-index: 35;
+            padding: 6px;
+            border-radius: 18px;
+            background: var(--glass-solid);
+            backdrop-filter: blur(22px);
+            -webkit-backdrop-filter: blur(22px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 18px 46px rgba(0, 0, 0, 0.48);
+            display: none;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .exp-search.is-open .exp-search-results.has-query {
+            display: flex;
+        }
+
+        .search-result-item {
+            width: 100%;
+            text-align: left;
+            padding: 9px 12px;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            color: var(--text-dark);
+            transition: background-color 0.15s ease;
+        }
+
+        .search-result-item:hover,
+        .search-result-item.is-selected,
+        .search-result-item:focus-visible {
+            background: rgba(66, 133, 244, 0.16);
+            outline: none;
+        }
+
+        .search-result-meta {
+            font-family: var(--font-mono);
+            font-size: 0.66rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #7ab0ff;
+        }
+
+        .search-result-title {
+            font-family: var(--font-brand);
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .search-result-snippet {
+            font-size: 0.78rem;
+            color: var(--text-gray);
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .search-result-empty {
+            padding: 16px 12px;
+            text-align: center;
             font-size: 0.82rem;
+            color: var(--text-gray);
+        }
+
+        /* Temporary glow pulse on matched target element */
+        @keyframes searchTargetPulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(66, 133, 244, 0.75);
+                border-color: rgba(66, 133, 244, 0.85);
+            }
+            65% {
+                box-shadow: 0 0 0 10px rgba(66, 133, 244, 0);
+                border-color: rgba(66, 133, 244, 0.65);
+            }
+            100% {
+                box-shadow: var(--glass-shadow);
+                border-color: var(--glass-border);
+            }
+        }
+
+        .search-hit-pulse {
+            animation: searchTargetPulse 1.3s ease-out;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .exp-search-field,
+            .exp-search.is-open .exp-search-field {
+                transition: none !important;
+            }
+            .search-hit-pulse {
+                animation: none !important;
+                outline: 2px solid var(--g-blue);
+            }
         }
 
         .pill-switch {
             display: inline-flex;
-            background: rgba(128, 128, 128, 0.12);
+            background: rgba(128, 128, 128, 0.14);
             border: 1px solid var(--glass-border);
             border-radius: 50px;
             padding: 2px;
@@ -539,24 +757,38 @@
             color: #ffffff;
         }
 
-        .theme-cycle-btn {
-            border: 1px solid var(--glass-border);
-            background: rgba(128, 128, 128, 0.1);
-            color: var(--text-dark);
-            font-size: 0.8rem;
-            font-weight: 500;
-            padding: 6px 12px;
-            border-radius: 50px;
-            transition: all 0.2s;
-            white-space: nowrap;
-            flex-shrink: 0;
+        /* Handwritten Signature "yaka" (Replaced Tone button) */
+        .yaka-signature {
+            position: relative;
             display: inline-flex;
             align-items: center;
+            padding: 0 6px 2px;
+            font-family: var(--font-signature);
+            font-size: 1.72rem;
+            font-weight: 400;
+            line-height: 1;
+            letter-spacing: 0.02em;
+            color: var(--text-dark);
+            transform: rotate(-5deg);
+            user-select: none;
+            -webkit-user-select: none;
+            white-space: nowrap;
+            flex-shrink: 0;
+            opacity: 0.94;
+            text-shadow: 0 2px 10px rgba(66, 133, 244, 0.28);
         }
 
-        .theme-cycle-btn:hover {
-            border-color: var(--g-blue);
-            color: var(--g-blue);
+        .yaka-signature::after {
+            content: '';
+            position: absolute;
+            left: 2px;
+            right: 2px;
+            bottom: -1px;
+            height: 2px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, transparent 0%, rgba(110, 168, 255, 0.85) 35%, rgba(255, 255, 255, 0.65) 75%, transparent 100%);
+            transform: rotate(-2deg);
+            pointer-events: none;
         }
 
         /* ==========================================================================
@@ -586,10 +818,15 @@
             flex-wrap: wrap;
             max-width: 100%;
         }
-        .cat-blue { color: var(--g-blue); }
-        .cat-red { color: var(--g-red); }
-        .cat-green { color: var(--g-green); }
-        .cat-yellow { color: #d99f00; }
+        .cat-blue { color: #6ea8ff; }
+        .cat-red { color: #ff7b72; }
+        .cat-green { color: #5ad47b; }
+        .cat-yellow { color: #ffd154; }
+
+        html[data-bg-tone="light"] .cat-blue { color: var(--g-blue); }
+        html[data-bg-tone="light"] .cat-red { color: var(--g-red); }
+        html[data-bg-tone="light"] .cat-green { color: var(--g-green); }
+        html[data-bg-tone="light"] .cat-yellow { color: #d99f00; }
 
         /* ==========================================================================
            05. HERO FEATURED CARD & ADAPTIVE PORTRAIT SYSTEM
@@ -654,12 +891,12 @@
             padding: 10px 12px;
             border-radius: 14px;
             border: 1px solid var(--glass-border);
-            background: rgba(255, 255, 255, 0.42);
+            background: rgba(255, 255, 255, 0.05);
             min-width: 0;
         }
 
-        html[data-theme="dark"] .spec-box {
-            background: rgba(255, 255, 255, 0.04);
+        html[data-bg-tone="light"] .spec-box {
+            background: rgba(255, 255, 255, 0.42);
         }
 
         .spec-label {
@@ -721,13 +958,13 @@
         }
 
         .btn-secondary {
-            background: rgba(255, 255, 255, 0.55);
+            background: rgba(255, 255, 255, 0.08);
             color: var(--text-dark);
             border: 1px solid var(--glass-border);
         }
 
-        html[data-theme="dark"] .btn-secondary {
-            background: rgba(255, 255, 255, 0.08);
+        html[data-bg-tone="light"] .btn-secondary {
+            background: rgba(255, 255, 255, 0.55);
         }
 
         .btn-secondary:hover {
@@ -754,14 +991,14 @@
             height: 100%;
             border-left: 1px solid var(--glass-border);
             overflow: hidden;
-            background: #dfe4ec;
+            background: #1b1d22;
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
         }
 
-        html[data-theme="dark"] .hero-portrait-pane {
-            background: #1b1d22;
+        html[data-bg-tone="light"] .hero-portrait-pane {
+            background: #dfe4ec;
         }
 
         .portrait-floating-badge {
@@ -1005,13 +1242,13 @@
             cursor: pointer;
             transition: all 0.2s;
             border: 1px solid var(--glass-border);
-            background: rgba(255, 255, 255, 0.45);
+            background: rgba(255, 255, 255, 0.06);
             color: var(--text-dark);
             white-space: nowrap;
         }
 
-        html[data-theme="dark"] .pill {
-            background: rgba(255, 255, 255, 0.06);
+        html[data-bg-tone="light"] .pill {
+            background: rgba(255, 255, 255, 0.45);
         }
 
         .pill:hover, .pill.active {
@@ -1165,10 +1402,15 @@
             font-weight: 600;
             padding: 6px 12px;
             border-radius: 50px;
-            background: rgba(66, 133, 244, 0.14);
-            color: var(--g-blue);
+            background: rgba(66, 133, 244, 0.18);
+            color: #7ab0ff;
             white-space: nowrap;
             flex-shrink: 0;
+        }
+
+        html[data-bg-tone="light"] .doc-badge {
+            background: rgba(66, 133, 244, 0.14);
+            color: var(--g-blue);
         }
 
         .doc-info h3 {
@@ -1355,6 +1597,107 @@
             transform: translateY(0);
         }
 
+        /* ==========================================================================
+           09B. FLOATING BACK-TO-TOP BUTTON (NON-INTRUSIVE GLASS WITH PROGRESS RING)
+        ========================================================================== */
+        .back-to-top {
+            position: fixed;
+            right: 24px;
+            bottom: 28px;
+            z-index: 92;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-dark);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transform: translate3d(0, 14px, 0) scale(0.9);
+            will-change: transform, opacity;
+            transition:
+                opacity 0.28s ease,
+                transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+                background-color 0.2s ease,
+                border-color 0.2s ease,
+                box-shadow 0.2s ease,
+                visibility 0s linear 0.28s;
+        }
+
+        .back-to-top.is-visible {
+            opacity: 0.92;
+            visibility: visible;
+            pointer-events: auto;
+            transform: translate3d(0, 0, 0) scale(1);
+            transition:
+                opacity 0.28s ease,
+                transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+                background-color 0.2s ease,
+                border-color 0.2s ease,
+                box-shadow 0.2s ease,
+                visibility 0s linear 0s;
+        }
+
+        .back-to-top:hover,
+        .back-to-top:focus-visible {
+            opacity: 1;
+            background: var(--glass-bg-hover);
+            border-color: rgba(66, 133, 244, 0.55);
+            color: var(--g-blue);
+            transform: translate3d(0, -3px, 0) scale(1.04);
+            box-shadow: 0 10px 28px rgba(66, 133, 244, 0.28);
+        }
+
+        .back-to-top:active {
+            transform: translate3d(0, 0, 0) scale(0.95);
+        }
+
+        .back-to-top .material-icons-outlined {
+            font-size: 21px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .btt-progress {
+            position: absolute;
+            inset: -1px;
+            width: calc(100% + 2px);
+            height: calc(100% + 2px);
+            transform: rotate(-90deg);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .btt-track {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.08);
+            stroke-width: 2;
+        }
+
+        .btt-bar {
+            fill: none;
+            stroke: var(--g-blue);
+            stroke-width: 2.2;
+            stroke-linecap: round;
+            stroke-dasharray: 128.8;
+            stroke-dashoffset: 128.8;
+        }
+
+        body.intro-lock .back-to-top,
+        body.drawer-open .back-to-top {
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .back-to-top {
+                transform: none !important;
+                transition: opacity 0.15s ease !important;
+            }
+        }
+
         /* Footer */
         footer {
             padding: 28px 5%;
@@ -1388,9 +1731,9 @@
             width: 100vw;
             height: 100vh;
             z-index: 9999;
-            background: #f4f6f9;
-            border-right: 1px solid rgba(32, 33, 36, 0.08);
-            box-shadow: 24px 0 60px rgba(31, 38, 135, 0.14);
+            background: #121622;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 24px 0 60px rgba(0, 0, 0, 0.55);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1398,12 +1741,6 @@
             transform: translate3d(-100%, 0, 0);
             will-change: transform;
             transition: transform 1.15s cubic-bezier(0.22, 1, 0.36, 1);
-        }
-
-        html[data-theme="dark"] .wipe-overlay {
-            background: #121316;
-            border-right-color: rgba(255, 255, 255, 0.1);
-            box-shadow: 24px 0 60px rgba(0, 0, 0, 0.55);
         }
 
         .wipe-overlay.is-covering {
@@ -1466,17 +1803,9 @@
             display: none;
         }
 
-        @media (min-width: 1201px) {
-            .search-bar { width: 200px; }
-            .search-bar:focus-within { width: 240px; }
-        }
-
         @media (max-width: 1080px) {
             header.top-nav {
                 padding: 12px 3.5%;
-            }
-            .search-bar {
-                display: none;
             }
             .nav-menu {
                 gap: 14px;
@@ -1539,6 +1868,16 @@
             }
             .toast-banner {
                 bottom: 76px;
+            }
+            /* Position Back-to-Top cleanly above mobile-quick-bar */
+            .back-to-top {
+                right: 14px;
+                bottom: 74px;
+                width: 42px;
+                height: 42px;
+            }
+            .back-to-top .material-icons-outlined {
+                font-size: 19px;
             }
         }
 
@@ -1658,9 +1997,17 @@
                 padding: 4px 7px;
                 font-size: 0.7rem;
             }
-            .theme-cycle-btn {
-                padding: 5px 9px;
-                font-size: 0.72rem;
+            .yaka-signature {
+                font-size: 1.48rem;
+                padding: 0 3px 1px;
+            }
+            .exp-search {
+                width: 34px;
+                height: 34px;
+            }
+            .exp-search-trigger {
+                width: 34px;
+                height: 34px;
             }
             .cmp {
                 aspect-ratio: 1 / 1.15;
@@ -1716,6 +2063,9 @@
         <div class="blob blob-4"></div>
     </div>
 
+    <!-- Scroll-Driven Translucent Dusk Color Overlay -->
+    <div class="scroll-dusk-layer" id="scrollDuskLayer" aria-hidden="true"></div>
+
     <!-- ==========================================================================
          TOP NAVIGATION (THE KEYWORD GLASS STYLE)
     ========================================================================= -->
@@ -1747,9 +2097,42 @@
         </ul>
 
         <div class="header-right">
-            <div class="search-bar">
-                <span class="material-icons-outlined" style="color: var(--text-gray); font-size: 18px;">search</span>
-                <input type="text" id="searchInput" placeholder="Search skills & labs...">
+            <!-- Expanding Search (Opens toward Left via clip-path) -->
+            <div class="exp-search" id="expSearch">
+                <button
+                    type="button"
+                    class="exp-search-trigger"
+                    id="searchTrigger"
+                    aria-label="Open search"
+                    aria-expanded="false"
+                    aria-controls="searchFieldWrap"
+                >
+                    <span class="material-icons-outlined" aria-hidden="true">search</span>
+                </button>
+
+                <div class="exp-search-field" id="searchFieldWrap" aria-hidden="true">
+                    <span class="material-icons-outlined exp-search-icon" aria-hidden="true">search</span>
+                    <input
+                        type="search"
+                        id="searchInput"
+                        class="exp-search-input"
+                        placeholder="Search skills, labs, certs..."
+                        autocomplete="off"
+                        tabindex="-1"
+                        aria-label="Search site content"
+                    >
+                    <button
+                        type="button"
+                        class="exp-search-close"
+                        id="searchCloseBtn"
+                        aria-label="Close search"
+                        tabindex="-1"
+                    >
+                        <span class="material-icons-outlined" aria-hidden="true">close</span>
+                    </button>
+                </div>
+
+                <div class="exp-search-results" id="searchResults" role="listbox" aria-label="Search results"></div>
             </div>
 
             <div class="pill-switch" title="Switch Language (English / Deutsch)">
@@ -1757,9 +2140,7 @@
                 <button type="button" class="pill-option" id="langDe" onclick="switchLanguage('de')">DE</button>
             </div>
 
-            <button type="button" class="theme-cycle-btn" id="themeBtn" onclick="toggleThemeManual()">
-                ◐ Tone
-            </button>
+            <span class="yaka-signature" aria-label="yaka signature">yaka</span>
         </div>
     </header>
 
@@ -1769,7 +2150,7 @@
     <main class="container">
 
         <!-- HERO FEATURED POST CARD -->
-        <section id="home">
+        <section id="home" data-dusk-deep="#141926">
             <article class="hero-card glass">
                 <div class="hero-content">
                     <span class="category cat-blue">
@@ -1875,7 +2256,7 @@
         </section>
 
         <!-- SCROLL-DRIVEN TEXT FILL STATEMENT -->
-        <section class="scroll-fill-section" id="statementSection" aria-label="Focus Statement">
+        <section class="scroll-fill-section" id="statementSection" aria-label="Focus Statement" data-dusk-deep="#1c2038">
             <div class="scroll-fill-pin">
                 <div class="scroll-fill-card glass">
                     <span class="category cat-blue" data-i18n="srf_kicker">My Approach</span>
@@ -1887,7 +2268,7 @@
         </section>
 
         <!-- 01 / ABOUT -->
-        <section id="about" class="searchable-section">
+        <section id="about" class="searchable-section" data-dusk-deep="#261d36">
             <div class="section-header">
                 <div>
                     <span class="category cat-blue" data-i18n="ch1_idx">01 / About Me</span>
@@ -1902,7 +2283,7 @@
         </section>
 
         <!-- 02 / SKILLS -->
-        <section id="skills" class="searchable-section">
+        <section id="skills" class="searchable-section" data-dusk-deep="#162734">
             <div class="section-header">
                 <div>
                     <span class="category cat-green" data-i18n="ch2_idx">02 / Technical Skills</span>
@@ -1917,7 +2298,7 @@
         </section>
 
         <!-- 03 / LABS -->
-        <section id="labs" class="searchable-section">
+        <section id="labs" class="searchable-section" data-dusk-deep="#231f38">
             <div class="section-header">
                 <div>
                     <span class="category cat-red" data-i18n="ch3_idx">03 / Home Laboratories</span>
@@ -1936,7 +2317,7 @@
         </section>
 
         <!-- 04 / CERTIFICATIONS -->
-        <section id="certifications" class="searchable-section">
+        <section id="certifications" class="searchable-section" data-dusk-deep="#2b1e2e">
             <div class="section-header">
                 <div>
                     <span class="category cat-yellow" data-i18n="ch4_idx">04 / Certifications</span>
@@ -1951,7 +2332,7 @@
         </section>
 
         <!-- 05 / DOCUMENTS -->
-        <section id="documents" class="searchable-section">
+        <section id="documents" class="searchable-section" data-dusk-deep="#182433">
             <div class="section-header">
                 <div>
                     <span class="category cat-blue" data-i18n="ch5_idx">05 / Application Documents</span>
@@ -1966,7 +2347,7 @@
         </section>
 
         <!-- 06 / CONTACT -->
-        <section id="contact">
+        <section id="contact" data-dusk-deep="#121621">
             <div class="newsletter glass">
                 <div class="logo-dots" style="justify-content: center; margin-bottom: 16px;">
                     <div class="dot dot-blue"></div>
@@ -1997,6 +2378,15 @@
         </section>
 
     </main>
+
+    <!-- Back to Top Floating Button -->
+    <button type="button" class="back-to-top glass" id="backToTop" aria-label="Back to top" title="Back to top">
+        <svg class="btt-progress" viewBox="0 0 46 46" aria-hidden="true">
+            <circle class="btt-track" cx="23" cy="23" r="20.5" />
+            <circle class="btt-bar" id="bttBar" cx="23" cy="23" r="20.5" />
+        </svg>
+        <span class="material-icons-outlined" aria-hidden="true">arrow_upward</span>
+    </button>
 
     <!-- Mobile & Tablet Quick Bar -->
     <nav class="mobile-quick-bar glass" aria-label="Mobile Quick Navigation">
@@ -2099,8 +2489,8 @@
 
                 header.classList.toggle("is-scrolled", currentY > 12);
 
-                const searchFocused = document.activeElement && header.contains(document.activeElement) && document.activeElement.tagName === "INPUT";
-                if (currentY <= TOP_REVEAL_ZONE || searchFocused) {
+                const searchOpen = document.getElementById("expSearch")?.classList.contains("is-open");
+                if (currentY <= TOP_REVEAL_ZONE || searchOpen) {
                     if (hidden) {
                         hidden = false;
                         header.classList.remove("is-hidden");
@@ -2359,6 +2749,7 @@ passwordauthentication no`
             aboutCards.forEach((card, i) => {
                 const el = document.createElement("article");
                 el.className = "card glass searchable-item";
+                el.id = `about-card-${i}`;
                 const catClass = catColorClasses[i % 4];
                 el.innerHTML = `
                     <div class="card-content">
@@ -2378,6 +2769,7 @@ passwordauthentication no`
             skills.forEach((skill, i) => {
                 const el = document.createElement("article");
                 el.className = "card glass searchable-item";
+                el.id = `skill-card-${i}`;
                 const catClass = catColorClasses[i % 4];
                 el.innerHTML = `
                     <div class="card-content">
@@ -2398,6 +2790,7 @@ passwordauthentication no`
             labs.forEach((lab, idx) => {
                 const el = document.createElement("article");
                 el.className = "card glass lab-item searchable-item";
+                el.id = `lab-card-${idx}`;
                 el.setAttribute("data-category", lab.filterKey);
                 const catClass = catColorClasses[idx % 4];
                 const bannerClass = bannerColorClasses[idx % 4];
@@ -2433,6 +2826,7 @@ passwordauthentication no`
             certifications.forEach((cert, i) => {
                 const el = document.createElement("article");
                 el.className = "card glass searchable-item";
+                el.id = `cert-card-${i}`;
                 const catClass = catColorClasses[i % 4];
                 el.innerHTML = `
                     <div class="card-content">
@@ -2455,9 +2849,10 @@ passwordauthentication no`
         function renderDocuments() {
             const container = document.getElementById("documentsList");
             container.innerHTML = "";
-            documents.forEach(doc => {
+            documents.forEach((doc, i) => {
                 const row = document.createElement("div");
                 row.className = "doc-row glass searchable-item";
+                row.id = `doc-row-${i}`;
                 row.innerHTML = `
                     <div class="doc-info">
                         <span class="doc-badge">${doc.tag}</span>
@@ -2486,7 +2881,7 @@ passwordauthentication no`
         renderDocuments();
 
         /* ==========================================================================
-           FILTER LABS & LIVE SEARCH
+           FILTER LABS
         ========================================================================== */
         window.filterLabs = function(category, btnEl) {
             document.querySelectorAll("#labs .pill").forEach(p => p.classList.remove("active"));
@@ -2499,15 +2894,327 @@ passwordauthentication no`
                     card.style.display = "none";
                 }
             });
+            if (window.updateDuskBackground) window.updateDuskBackground();
         };
 
-        document.getElementById("searchInput").addEventListener("keyup", function(e) {
-            const term = e.target.value.toLowerCase().trim();
-            document.querySelectorAll(".searchable-item").forEach(item => {
-                const text = item.innerText.toLowerCase();
-                item.style.display = text.includes(term) ? "" : "none";
+        /* ==========================================================================
+           EXPANDING SEARCH + REAL LIVE SITE SEARCH ENGINE
+           Settings: Opens toward=Left, Speed=Normal, Closes when you leave it=on
+        ========================================================================== */
+        (function initExpandingSearch() {
+            const wrap = document.getElementById("expSearch");
+            const trigger = document.getElementById("searchTrigger");
+            const fieldWrap = document.getElementById("searchFieldWrap");
+            const input = document.getElementById("searchInput");
+            const closeBtn = document.getElementById("searchCloseBtn");
+            const resultsBox = document.getElementById("searchResults");
+            if (!wrap || !trigger || !fieldWrap || !input || !closeBtn || !resultsBox) return;
+
+            let isOpen = false;
+            let currentMatches = [];
+            let selectedIndex = -1;
+
+            function getSearchIndex() {
+                const index = [];
+
+                aboutCards.forEach((card, i) => {
+                    const body = currentLang === "de" ? card.textDe : card.textEn;
+                    index.push({
+                        category: "About",
+                        title: `${card.code} · ${card.tag}`,
+                        snippet: body,
+                        haystack: `${card.code} ${card.tag} ${card.textEn} ${card.textDe}`.toLowerCase(),
+                        targetId: `about-card-${i}`
+                    });
+                });
+
+                skills.forEach((skill, i) => {
+                    const joined = skill.items.join(" · ");
+                    index.push({
+                        category: "Skills",
+                        title: skill.title,
+                        snippet: joined,
+                        haystack: `${skill.num} ${skill.title} ${joined}`.toLowerCase(),
+                        targetId: `skill-card-${i}`
+                    });
+                });
+
+                labs.forEach((lab, i) => {
+                    index.push({
+                        category: `Lab · ${lab.category}`,
+                        title: lab.title,
+                        snippet: lab.description,
+                        haystack: `${lab.number} ${lab.title} ${lab.category} ${lab.description} ${lab.features.join(" ")} ${lab.cli}`.toLowerCase(),
+                        targetId: `lab-card-${i}`,
+                        action: () => {
+                            const card = document.getElementById(`lab-card-${i}`);
+                            if (card && card.style.display === "none") {
+                                const allBtn = document.querySelector("#labs .pill");
+                                filterLabs("all", allBtn);
+                            }
+                            jumpToTarget(`lab-card-${i}`);
+                            setTimeout(() => openLabDrawer(i), 380);
+                        }
+                    });
+                });
+
+                certifications.forEach((cert, i) => {
+                    index.push({
+                        category: "Certification",
+                        title: `${cert.brand} — ${cert.title}`,
+                        snippet: "Verified Credly Badge",
+                        haystack: `${cert.brand} ${cert.title} credly badge certificate zertifikat`.toLowerCase(),
+                        targetId: `cert-card-${i}`
+                    });
+                });
+
+                documents.forEach((doc, i) => {
+                    index.push({
+                        category: doc.tag,
+                        title: doc.name,
+                        snippet: doc.description,
+                        haystack: `${doc.tag} ${doc.name} ${doc.description} cv lebenslauf pdf`.toLowerCase(),
+                        targetId: `doc-row-${i}`,
+                        action: () => {
+                            jumpToTarget(`doc-row-${i}`);
+                            if (doc.type === "cv") setTimeout(() => openCVDrawer(), 380);
+                        }
+                    });
+                });
+
+                index.push({
+                    category: "Page",
+                    title: "Learning Studio ↗",
+                    snippet: "Interactive notes & networking study portal",
+                    haystack: "learning notes study portal lernportal".toLowerCase(),
+                    action: () => {
+                        if (window.triggerLearningWipe) {
+                            window.triggerLearningWipe("learning.html");
+                        } else {
+                            window.location.href = "learning.html";
+                        }
+                    }
+                });
+
+                index.push({
+                    category: "Contact",
+                    title: "Email & Contact — yasharkamran98@gmail.com",
+                    snippet: "Reach out for Ausbildung interviews or application documents",
+                    haystack: "contact kontakt email yasharkamran98@gmail.com ausbildung bewerbung".toLowerCase(),
+                    targetId: "contact"
+                });
+
+                return index;
+            }
+
+            function jumpToTarget(elementId) {
+                const el = document.getElementById(elementId);
+                if (!el) return;
+                const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+                el.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" });
+                el.classList.remove("search-hit-pulse");
+                void el.offsetWidth;
+                el.classList.add("search-hit-pulse");
+                setTimeout(() => el.classList.remove("search-hit-pulse"), 1400);
+            }
+
+            function executeResult(item) {
+                if (!item) return;
+                closeSearch(false);
+                if (typeof item.action === "function") {
+                    item.action();
+                } else if (item.targetId) {
+                    jumpToTarget(item.targetId);
+                }
+            }
+
+            function renderResults(query) {
+                const term = query.trim().toLowerCase();
+                resultsBox.innerHTML = "";
+                selectedIndex = -1;
+
+                if (!term) {
+                    currentMatches = [];
+                    resultsBox.classList.remove("has-query");
+                    return;
+                }
+
+                const tokens = term.split(/\s+/).filter(Boolean);
+                const index = getSearchIndex();
+                currentMatches = index
+                    .filter((entry) => tokens.every((tok) => entry.haystack.includes(tok)))
+                    .slice(0, 7);
+
+                resultsBox.classList.add("has-query");
+
+                if (!currentMatches.length) {
+                    const empty = document.createElement("div");
+                    empty.className = "search-result-empty";
+                    empty.textContent = currentLang === "de"
+                        ? `Keine Treffer für „${query.trim()}“`
+                        : `No matches found for "${query.trim()}"`;
+                    resultsBox.appendChild(empty);
+                    return;
+                }
+
+                currentMatches.forEach((item) => {
+                    const btn = document.createElement("button");
+                    btn.type = "button";
+                    btn.className = "search-result-item";
+                    btn.setAttribute("role", "option");
+                    btn.innerHTML = `
+                        <span class="search-result-meta">${item.category}</span>
+                        <span class="search-result-title">${item.title}</span>
+                        <span class="search-result-snippet">${item.snippet}</span>
+                    `;
+                    btn.addEventListener("mousedown", (e) => {
+                        e.preventDefault();
+                        executeResult(item);
+                    });
+                    btn.addEventListener("click", () => executeResult(item));
+                    resultsBox.appendChild(btn);
+                });
+            }
+
+            function highlightSelected() {
+                const btns = resultsBox.querySelectorAll(".search-result-item");
+                btns.forEach((b, i) => {
+                    b.classList.toggle("is-selected", i === selectedIndex);
+                });
+                if (selectedIndex >= 0 && btns[selectedIndex]) {
+                    btns[selectedIndex].scrollIntoView({ block: "nearest" });
+                }
+            }
+
+            function openSearch() {
+                if (isOpen) return;
+                isOpen = true;
+                wrap.classList.add("is-open");
+                trigger.setAttribute("aria-expanded", "true");
+                fieldWrap.setAttribute("aria-hidden", "false");
+                input.tabIndex = 0;
+                closeBtn.tabIndex = 0;
+
+                document.getElementById("topNav")?.classList.remove("is-hidden");
+
+                requestAnimationFrame(() => {
+                    input.focus();
+                    if (input.value.trim()) {
+                        renderResults(input.value);
+                    }
+                });
+            }
+
+            function closeSearch(returnFocus) {
+                if (!isOpen) return;
+                isOpen = false;
+                wrap.classList.remove("is-open");
+                trigger.setAttribute("aria-expanded", "false");
+                fieldWrap.setAttribute("aria-hidden", "true");
+                input.tabIndex = -1;
+                closeBtn.tabIndex = -1;
+                resultsBox.classList.remove("has-query");
+                selectedIndex = -1;
+
+                if (returnFocus) {
+                    trigger.focus();
+                }
+            }
+
+            trigger.addEventListener("click", () => {
+                openSearch();
             });
-        });
+
+            closeBtn.addEventListener("click", () => {
+                input.value = "";
+                renderResults("");
+                closeSearch(true);
+            });
+
+            input.addEventListener("input", () => {
+                renderResults(input.value);
+            });
+
+            input.addEventListener("keydown", (e) => {
+                if (e.key === "Escape") {
+                    e.preventDefault();
+                    closeSearch(true);
+                    return;
+                }
+                if (e.key === "ArrowDown" && currentMatches.length) {
+                    e.preventDefault();
+                    selectedIndex = (selectedIndex + 1) % currentMatches.length;
+                    highlightSelected();
+                } else if (e.key === "ArrowUp" && currentMatches.length) {
+                    e.preventDefault();
+                    selectedIndex = (selectedIndex - 1 + currentMatches.length) % currentMatches.length;
+                    highlightSelected();
+                } else if (e.key === "Enter" && currentMatches.length) {
+                    e.preventDefault();
+                    const pick = currentMatches[selectedIndex >= 0 ? selectedIndex : 0];
+                    executeResult(pick);
+                }
+            });
+
+            wrap.addEventListener("focusout", (e) => {
+                if (!isOpen) return;
+                const nextFocus = e.relatedTarget;
+                if (nextFocus && wrap.contains(nextFocus)) return;
+                setTimeout(() => {
+                    if (isOpen && !wrap.contains(document.activeElement)) {
+                        closeSearch(false);
+                    }
+                }, 0);
+            });
+
+            document.addEventListener("pointerdown", (e) => {
+                if (isOpen && !wrap.contains(e.target)) {
+                    closeSearch(false);
+                }
+            });
+        })();
+
+        /* ==========================================================================
+           BACK TO TOP CONTROLLER (SMOOTH SCROLL + PROGRESS RING)
+        ========================================================================== */
+        (function initBackToTop() {
+            const btn = document.getElementById("backToTop");
+            const bar = document.getElementById("bttBar");
+            if (!btn || !bar) return;
+
+            const CIRCUMFERENCE = 2 * Math.PI * 20.5;
+            const SHOW_OFFSET = 360;
+            let ticking = false;
+
+            function updateButton() {
+                ticking = false;
+                const scrollY = window.scrollY || window.pageYOffset || 0;
+                const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+                const progress = Math.min(1, Math.max(0, scrollY / maxScroll));
+
+                btn.classList.toggle("is-visible", scrollY > SHOW_OFFSET);
+                bar.style.strokeDashoffset = (CIRCUMFERENCE * (1 - progress)).toFixed(2);
+            }
+
+            function onScrollOrResize() {
+                if (!ticking) {
+                    ticking = true;
+                    requestAnimationFrame(updateButton);
+                }
+            }
+
+            btn.addEventListener("click", () => {
+                const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+                window.scrollTo({
+                    top: 0,
+                    behavior: reduced ? "auto" : "smooth"
+                });
+            });
+
+            updateButton();
+            window.addEventListener("scroll", onScrollOrResize, { passive: true });
+            window.addEventListener("resize", onScrollOrResize, { passive: true });
+        })();
 
         /* ==========================================================================
            DRAWER MODAL
@@ -2533,6 +3240,7 @@ passwordauthentication no`
             document.getElementById("drawerCli").textContent = lab.cli;
             document.getElementById("drawerActionWrap").innerHTML = "";
             drawerBackdrop.classList.add("open");
+            document.body.classList.add("drawer-open");
             document.body.style.overflow = "hidden";
         }
 
@@ -2577,11 +3285,13 @@ passwordauthentication no`
             `;
 
             drawerBackdrop.classList.add("open");
+            document.body.classList.add("drawer-open");
             document.body.style.overflow = "hidden";
         }
 
         function closeDrawer() {
             drawerBackdrop.classList.remove("open");
+            document.body.classList.remove("drawer-open");
             document.body.style.overflow = "";
         }
 
@@ -2594,7 +3304,7 @@ passwordauthentication no`
         });
 
         /* ==========================================================================
-           LANGUAGE & THEME CONTROLS
+           LANGUAGE CONTROLS
         ========================================================================== */
         const translations = {
             en: {
@@ -2677,6 +3387,7 @@ passwordauthentication no`
             });
             renderAbout();
             if (window.updateScrollFillText) window.updateScrollFillText(translations[lang].srf_statement);
+            if (window.updateDuskBackground) window.updateDuskBackground();
         }
 
         function showToast(msg) {
@@ -2691,11 +3402,140 @@ passwordauthentication no`
             showToast("Copied: yasharkamran98@gmail.com");
         }
 
-        function toggleThemeManual() {
-            const root = document.documentElement;
-            const next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
-            root.setAttribute("data-theme", next);
-        }
+        /* ==========================================================================
+           02. SCROLL-DRIVEN BACKGROUND COLOR ENGINE (OKLAB PERCEPTUAL BLEND)
+           Settings: Colors=Dusk (Dark-leaning & Translucent), Blend=Gradual,
+                     Reduced motion=Keep active, Auto contrast text check=on
+        ========================================================================== */
+        (function initScrollDrivenDuskBackground() {
+            const sections = Array.from(document.querySelectorAll("main.container > section[data-dusk-deep]"));
+            const layer = document.getElementById("scrollDuskLayer");
+            if (!sections.length || !layer) return;
+
+            const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
+
+            function hexToRgb(hex) {
+                const clean = hex.replace("#", "").trim();
+                const num = parseInt(clean, 16);
+                return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+            }
+
+            function srgbToLinear(c) {
+                const s = c / 255;
+                return s <= 0.04045 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+            }
+
+            function linearToSrgb(c) {
+                const cl = clamp(c, 0, 1);
+                const s = cl <= 0.0031308 ? 12.92 * cl : 1.055 * Math.pow(cl, 1 / 2.4) - 0.055;
+                return Math.round(clamp(s, 0, 1) * 255);
+            }
+
+            function rgbToOklab(r, g, b) {
+                const lr = srgbToLinear(r);
+                const lg = srgbToLinear(g);
+                const lb = srgbToLinear(b);
+                const l = Math.cbrt(0.4122214708 * lr + 0.5363325363 * lg + 0.0514459929 * lb);
+                const m = Math.cbrt(0.2119034982 * lr + 0.6806995451 * lg + 0.1073969566 * lb);
+                const s = Math.cbrt(0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb);
+                return [
+                    0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s,
+                    1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s,
+                    0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s
+                ];
+            }
+
+            function oklabToRgb(L, a, b) {
+                const l_ = L + 0.3963377774 * a + 0.2158037573 * b;
+                const m_ = L - 0.1055613458 * a - 0.0638541728 * b;
+                const s_ = L - 0.0894841775 * a - 1.2914855480 * b;
+                const l = l_ * l_ * l_;
+                const m = m_ * m_ * m_;
+                const s = s_ * s_ * s_;
+                return [
+                    linearToSrgb(+4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s),
+                    linearToSrgb(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s),
+                    linearToSrgb(-0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s)
+                ];
+            }
+
+            function relativeLuminance(r, g, b) {
+                return 0.2126 * srgbToLinear(r) + 0.7152 * srgbToLinear(g) + 0.0722 * srgbToLinear(b);
+            }
+
+            const stops = sections.map((sec) => {
+                const hex = sec.getAttribute("data-dusk-deep") || "#141926";
+                const [r, g, b] = hexToRgb(hex);
+                return {
+                    el: sec,
+                    lab: rgbToOklab(r, g, b)
+                };
+            });
+
+            let ticking = false;
+
+            function applyColor() {
+                ticking = false;
+                if (!stops.length) return;
+
+                const scrollY = window.scrollY || window.pageYOffset || 0;
+                const vh = window.innerHeight || 1;
+                const probeY = scrollY + vh * 0.45;
+
+                const anchors = stops.map((stop) => {
+                    const rect = stop.el.getBoundingClientRect();
+                    return rect.top + scrollY + Math.min(rect.height * 0.25, vh * 0.35);
+                });
+
+                let L, a, b;
+
+                if (probeY <= anchors[0]) {
+                    [L, a, b] = stops[0].lab;
+                } else if (probeY >= anchors[anchors.length - 1]) {
+                    [L, a, b] = stops[stops.length - 1].lab;
+                } else {
+                    let idx = 0;
+                    for (let i = 0; i < anchors.length - 1; i++) {
+                        if (probeY >= anchors[i] && probeY <= anchors[i + 1]) {
+                            idx = i;
+                            break;
+                        }
+                    }
+                    const span = Math.max(1, anchors[idx + 1] - anchors[idx]);
+                    const t = clamp((probeY - anchors[idx]) / span, 0, 1);
+                    const c1 = stops[idx].lab;
+                    const c2 = stops[idx + 1].lab;
+
+                    L = c1[0] + (c2[0] - c1[0]) * t;
+                    a = c1[1] + (c2[1] - c1[1]) * t;
+                    b = c1[2] + (c2[2] - c1[2]) * t;
+                }
+
+                const [r, g, bl] = oklabToRgb(L, a, b);
+
+                document.documentElement.style.setProperty("--scroll-bg-color", `rgba(${r}, ${g}, ${bl}, 0.78)`);
+
+                const lum = relativeLuminance(r, g, bl);
+                const tone = lum > 0.36 ? "light" : "dark";
+                if (document.documentElement.getAttribute("data-bg-tone") !== tone) {
+                    document.documentElement.setAttribute("data-bg-tone", tone);
+                }
+            }
+
+            function onScrollOrResize() {
+                if (!ticking) {
+                    ticking = true;
+                    requestAnimationFrame(applyColor);
+                }
+            }
+
+            window.updateDuskBackground = onScrollOrResize;
+
+            applyColor();
+            window.addEventListener("scroll", onScrollOrResize, { passive: true });
+            window.addEventListener("resize", onScrollOrResize, { passive: true });
+            window.addEventListener("load", applyColor);
+        })();
 
         /* ==========================================================================
            SCROLL-DRIVEN TEXT FILL ENGINE
@@ -2975,8 +3815,7 @@ passwordauthentication no`
                 });
 
                 try {
-                    const isDark = document.documentElement.getAttribute("data-theme") === "dark";
-                    sessionStorage.setItem("yk_wipe_in", isDark ? "dark" : "light");
+                    sessionStorage.setItem("yk_wipe_in", "dark");
                 } catch (_) {}
 
                 setTimeout(() => {
