@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
@@ -47,7 +47,7 @@ let userQuizAnswers = {};
 let isQuizSubmitted = false;
 
 let chaptersUnsubscribe = null;
-let chaptersUnsubscribes = []; 
+let chaptersUnsubscribes = [];
 let articlesUnsubscribe = null;
 let finalExamUnsubscribe = null;
 
@@ -185,6 +185,7 @@ function listenToCourses() {
                 currentCourse.description = updatedCurrent.description;
             }
         }
+        if (window.refreshLearningSearch) window.refreshLearningSearch();
     }, error => {
         console.error(error);
         showToast("Could not load courses live. Check Firestore Rules.", "error");
@@ -256,6 +257,7 @@ function openCourse(courseId) {
         if (activeViewMode === "finalExam") {
             renderQuizOrExamView();
         }
+        if (window.refreshLearningSearch) window.refreshLearningSearch();
     });
 
     // Listen to Chapters
@@ -271,6 +273,7 @@ function openCourse(courseId) {
             renderLessonSidebar();
             currentLesson = null;
             renderEmptyCourse();
+            if (window.refreshLearningSearch) window.refreshLearningSearch();
             return;
         }
 
@@ -305,6 +308,7 @@ function openCourse(courseId) {
                     currentLesson = null;
                     renderEmptyCourse();
                 }
+                if (window.refreshLearningSearch) window.refreshLearningSearch();
             });
             chaptersUnsubscribes.push(unsubLess);
 
@@ -319,6 +323,7 @@ function openCourse(courseId) {
                 if (activeViewMode === "chapterQuiz" && activeQuizChapterId === chapter.id) {
                     renderQuizOrExamView();
                 }
+                if (window.refreshLearningSearch) window.refreshLearningSearch();
             });
             chaptersUnsubscribes.push(unsubQuiz);
         });
@@ -481,7 +486,11 @@ function openLesson(courseId, chapterId, lessonId) {
     renderLessonSidebar();
 
     const contentScrollEl = document.getElementById("lessonContent");
-    if (contentScrollEl) contentScrollEl.scrollTop = 0;
+    if (contentScrollEl) {
+        contentScrollEl.scrollTop = 0;
+        if (window.updateBackToTop) window.updateBackToTop();
+        if (window.updateLearningDusk) window.updateLearningDusk();
+    }
 
     if (articlesUnsubscribe) articlesUnsubscribe();
     const qArt = query(collection(db, "courses", courseId, "chapters", chapterId, "lessons", lessonId, "articles"), orderBy("createdAt", "asc"));
@@ -494,6 +503,7 @@ function openLesson(courseId, chapterId, lessonId) {
         if (activeViewMode === "lesson") {
             renderLesson();
         }
+        if (window.refreshLearningSearch) window.refreshLearningSearch();
     });
 }
 
@@ -529,10 +539,10 @@ function renderLesson() {
 
     if (currentLesson.articles && currentLesson.articles.length > 0) {
         lessonHTML += `<div class="articles-container">`;
-        currentLesson.articles.forEach(art => {
+        currentLesson.articles.forEach((art, idx) => {
             const articleVideoHTML = renderYouTubePlayer(art);
             lessonHTML += `
-                <div class="article-block">
+                <div class="article-block" id="article-block-${idx}">
                     <h3>${escapeHTML(art.title)}</h3>
                     ${art.content ? `<p>${art.content}</p>` : ""}
                     ${articleVideoHTML}
@@ -566,7 +576,7 @@ function renderLesson() {
             lessonHTML += `
                 <div class="assessment-banner-card final glass">
                     <div class="assessment-text-area">
-                        <div class="assessment-kicker" style="color:var(--g-blue)">COURSE FINAL EXAMINATION // ${escapeHTML(currentCourse.title)}</div>
+                        <div class="assessment-kicker" style="color:var(--g-blue-soft)">COURSE FINAL EXAMINATION // ${escapeHTML(currentCourse.title)}</div>
                         <div class="assessment-title">Take the Final Course Exam</div>
                         <div class="assessment-meta">${currentCourse.finalExam.length} Questions · ${fPts} Points Each · Final Grade out of 20</div>
                     </div>
@@ -589,6 +599,8 @@ function renderLesson() {
     
     content.innerHTML = lessonHTML;
     setupLessonNavigation();
+    if (window.updateBackToTop) window.updateBackToTop();
+    if (window.updateLearningDusk) window.updateLearningDusk();
 }
 
 function setupLessonNavigation() {
@@ -621,7 +633,11 @@ window.openChapterQuiz = function(chapterId) {
     renderQuizOrExamView();
 
     const contentScrollEl = document.getElementById("lessonContent");
-    if (contentScrollEl) contentScrollEl.scrollTop = 0;
+    if (contentScrollEl) {
+        contentScrollEl.scrollTop = 0;
+        if (window.updateBackToTop) window.updateBackToTop();
+        if (window.updateLearningDusk) window.updateLearningDusk();
+    }
 };
 
 window.openCourseFinalExam = function() {
@@ -635,7 +651,11 @@ window.openCourseFinalExam = function() {
     renderQuizOrExamView();
 
     const contentScrollEl = document.getElementById("lessonContent");
-    if (contentScrollEl) contentScrollEl.scrollTop = 0;
+    if (contentScrollEl) {
+        contentScrollEl.scrollTop = 0;
+        if (window.updateBackToTop) window.updateBackToTop();
+        if (window.updateLearningDusk) window.updateLearningDusk();
+    }
 };
 
 window.selectQuizOption = function(questionId, optionIndex) {
@@ -884,6 +904,8 @@ function renderQuizOrExamView() {
 
     html += `</article>`;
     content.innerHTML = html;
+    if (window.updateBackToTop) window.updateBackToTop();
+    if (window.updateLearningDusk) window.updateLearningDusk();
 }
 
 function renderEmptyCourse() {
@@ -894,6 +916,8 @@ function renderEmptyCourse() {
             <p>No lessons have been added to this course yet.</p>
         </div>
     `;
+    if (window.updateBackToTop) window.updateBackToTop();
+    if (window.updateLearningDusk) window.updateLearningDusk();
 }
 
 function showToast(message, type = "success") {
@@ -913,54 +937,435 @@ function escapeHTML(value) {
         .replaceAll("'", "&#039;");
 }
 
-window.toggleSurfaceTheme = function() {
-    const html = document.documentElement;
-    const next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
-    html.setAttribute("data-theme", next);
-};
+function stripTags(html) {
+    return String(html || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
 
-window.addEventListener("DOMContentLoaded", listenToCourses);
+/* =========================================================
+   SCROLL-DRIVEN TRANSLUCENT DUSK BACKGROUND (MATCHING INDEX.HTML)
+========================================================= */
+function initLearningDuskBackground() {
+    const scrollEl = document.getElementById("lessonContent");
+    const layer = document.getElementById("scrollDuskLayer");
+    if (!scrollEl || !layer) return;
+
+    const palette = ["#141926", "#1c2038", "#261d36", "#162734", "#121621"];
+    const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
+
+    function hexToRgb(hex) {
+        const num = parseInt(hex.replace("#", ""), 16);
+        return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+    }
+
+    function srgbToLinear(c) {
+        const s = c / 255;
+        return s <= 0.04045 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+    }
+
+    function linearToSrgb(c) {
+        const cl = clamp(c, 0, 1);
+        const s = cl <= 0.0031308 ? 12.92 * cl : 1.055 * Math.pow(cl, 1 / 2.4) - 0.055;
+        return Math.round(clamp(s, 0, 1) * 255);
+    }
+
+    function rgbToOklab(r, g, b) {
+        const lr = srgbToLinear(r);
+        const lg = srgbToLinear(g);
+        const lb = srgbToLinear(b);
+        const l = Math.cbrt(0.4122214708 * lr + 0.5363325363 * lg + 0.0514459929 * lb);
+        const m = Math.cbrt(0.2119034982 * lr + 0.6806995451 * lg + 0.1073969566 * lb);
+        const s = Math.cbrt(0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb);
+        return [
+            0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s,
+            1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s,
+            0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s
+        ];
+    }
+
+    function oklabToRgb(L, a, b) {
+        const l_ = L + 0.3963377774 * a + 0.2158037573 * b;
+        const m_ = L - 0.1055613458 * a - 0.0638541728 * b;
+        const s_ = L - 0.0894841775 * a - 1.2914855480 * b;
+        const l = l_ * l_ * l_;
+        const m = m_ * m_ * m_;
+        const s = s_ * s_ * s_;
+        return [
+            linearToSrgb(+4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s),
+            linearToSrgb(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s),
+            linearToSrgb(-0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s)
+        ];
+    }
+
+    const labStops = palette.map(hex => {
+        const [r, g, b] = hexToRgb(hex);
+        return rgbToOklab(r, g, b);
+    });
+
+    let ticking = false;
+
+    function applyColor() {
+        ticking = false;
+        const maxScroll = Math.max(1, scrollEl.scrollHeight - scrollEl.clientHeight);
+        const progress = clamp((scrollEl.scrollTop || 0) / maxScroll, 0, 1);
+        const scaled = progress * (labStops.length - 1);
+        const idx = Math.min(labStops.length - 2, Math.floor(scaled));
+        const t = scaled - idx;
+
+        const c1 = labStops[idx];
+        const c2 = labStops[idx + 1];
+        const [r, g, b] = oklabToRgb(
+            c1[0] + (c2[0] - c1[0]) * t,
+            c1[1] + (c2[1] - c1[1]) * t,
+            c1[2] + (c2[2] - c1[2]) * t
+        );
+
+        document.documentElement.style.setProperty("--scroll-bg-color", `rgba(${r}, ${g}, ${b}, 0.78)`);
+    }
+
+    function onScroll() {
+        if (!ticking) {
+            ticking = true;
+            requestAnimationFrame(applyColor);
+        }
+    }
+
+    window.updateLearningDusk = applyColor;
+    applyColor();
+    scrollEl.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+}
+
+/* =========================================================
+   EXPANDING LIVE SEARCH ENGINE (COURSES, CHAPTERS, LESSONS, ARTICLES, QUIZZES)
+========================================================= */
+function initLearningSearch() {
+    const wrap = document.getElementById("expSearch");
+    const trigger = document.getElementById("searchTrigger");
+    const fieldWrap = document.getElementById("searchFieldWrap");
+    const input = document.getElementById("searchInput");
+    const closeBtn = document.getElementById("searchCloseBtn");
+    const resultsBox = document.getElementById("searchResults");
+    if (!wrap || !trigger || !fieldWrap || !input || !closeBtn || !resultsBox) return;
+
+    let isOpen = false;
+    let currentMatches = [];
+    let selectedIndex = -1;
+
+    function buildSearchIndex() {
+        const items = [];
+
+        courses.forEach(course => {
+            items.push({
+                category: "Course",
+                title: course.title || "Untitled Course",
+                snippet: stripTags(course.description || "Open course chapters & lessons"),
+                haystack: `${course.title || ""} ${stripTags(course.description || "")} course`.toLowerCase(),
+                action: () => openCourse(course.id)
+            });
+        });
+
+        if (currentCourse && Array.isArray(currentCourse.chapters)) {
+            currentCourse.chapters.forEach(chapter => {
+                if (Array.isArray(chapter.lessons)) {
+                    chapter.lessons.forEach(lesson => {
+                        const cleanText = stripTags(lesson.content || "");
+                        items.push({
+                            category: `Lesson · ${chapter.title}`,
+                            title: lesson.title || "Untitled Lesson",
+                            snippet: cleanText || (lesson.code ? lesson.code.slice(0, 90) : "View lesson details"),
+                            haystack: `${currentCourse.title} ${chapter.title} ${lesson.title} ${cleanText} ${lesson.code || ""}`.toLowerCase(),
+                            action: () => openLesson(currentCourse.id, chapter.id, lesson.id)
+                        });
+                    });
+                }
+
+                if (Array.isArray(chapter.quiz) && chapter.quiz.length > 0) {
+                    const quizText = chapter.quiz.map(q => q.question || "").join(" ");
+                    items.push({
+                        category: "Chapter Quiz",
+                        title: `${chapter.title} — Quiz (${chapter.quiz.length} Q)`,
+                        snippet: "Graded chapter assessment out of 20",
+                        haystack: `quiz test exam ${chapter.title} ${quizText}`.toLowerCase(),
+                        action: () => window.openChapterQuiz(chapter.id)
+                    });
+                }
+            });
+        }
+
+        if (currentLesson && Array.isArray(currentLesson.articles)) {
+            currentLesson.articles.forEach((art, idx) => {
+                const cleanText = stripTags(art.content || "");
+                items.push({
+                    category: `Article · ${currentLesson.title}`,
+                    title: art.title || "Article Note",
+                    snippet: cleanText || (art.code ? art.code.slice(0, 90) : "Jump to section"),
+                    haystack: `${art.title || ""} ${cleanText} ${art.code || ""}`.toLowerCase(),
+                    action: () => {
+                        const scrollBox = document.getElementById("lessonContent");
+                        const targetEl = document.getElementById(`article-block-${idx}`);
+                        if (targetEl) {
+                            const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+                            targetEl.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
+                            targetEl.classList.remove("search-hit-pulse");
+                            void targetEl.offsetWidth;
+                            targetEl.classList.add("search-hit-pulse");
+                            setTimeout(() => targetEl.classList.remove("search-hit-pulse"), 1400);
+                        } else if (scrollBox) {
+                            scrollBox.scrollTop = 0;
+                        }
+                    }
+                });
+            });
+        }
+
+        if (currentCourse && Array.isArray(currentCourse.finalExam) && currentCourse.finalExam.length > 0) {
+            const examText = currentCourse.finalExam.map(q => q.question || "").join(" ");
+            items.push({
+                category: "Final Exam",
+                title: `${currentCourse.title} — Final Exam`,
+                snippet: `${currentCourse.finalExam.length} Questions · Graded out of 20`,
+                haystack: `final exam test ${currentCourse.title} ${examText}`.toLowerCase(),
+                action: () => window.openCourseFinalExam()
+            });
+        }
+
+        return items;
+    }
+
+    function executeResult(item) {
+        if (!item) return;
+        closeSearch(false);
+        if (typeof item.action === "function") {
+            item.action();
+        }
+    }
+
+    function renderResults(queryText) {
+        const term = queryText.trim().toLowerCase();
+        resultsBox.innerHTML = "";
+        selectedIndex = -1;
+
+        if (!term) {
+            currentMatches = [];
+            resultsBox.classList.remove("has-query");
+            return;
+        }
+
+        const tokens = term.split(/\s+/).filter(Boolean);
+        const index = buildSearchIndex();
+        currentMatches = index
+            .filter(entry => tokens.every(tok => entry.haystack.includes(tok)))
+            .slice(0, 8);
+
+        resultsBox.classList.add("has-query");
+
+        if (!currentMatches.length) {
+            const empty = document.createElement("div");
+            empty.className = "search-result-empty";
+            empty.textContent = `No matches found for "${queryText.trim()}"`;
+            resultsBox.appendChild(empty);
+            return;
+        }
+
+        currentMatches.forEach(item => {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "search-result-item";
+            btn.setAttribute("role", "option");
+            btn.innerHTML = `
+                <span class="search-result-meta">${escapeHTML(item.category)}</span>
+                <span class="search-result-title">${escapeHTML(item.title)}</span>
+                <span class="search-result-snippet">${escapeHTML(item.snippet)}</span>
+            `;
+            btn.addEventListener("mousedown", e => {
+                e.preventDefault();
+                executeResult(item);
+            });
+            btn.addEventListener("click", () => executeResult(item));
+            resultsBox.appendChild(btn);
+        });
+    }
+
+    function highlightSelected() {
+        const btns = resultsBox.querySelectorAll(".search-result-item");
+        btns.forEach((b, i) => {
+            b.classList.toggle("is-selected", i === selectedIndex);
+        });
+        if (selectedIndex >= 0 && btns[selectedIndex]) {
+            btns[selectedIndex].scrollIntoView({ block: "nearest" });
+        }
+    }
+
+    function openSearch() {
+        if (isOpen) return;
+        isOpen = true;
+        wrap.classList.add("is-open");
+        trigger.setAttribute("aria-expanded", "true");
+        fieldWrap.setAttribute("aria-hidden", "false");
+        input.tabIndex = 0;
+        closeBtn.tabIndex = 0;
+
+        requestAnimationFrame(() => {
+            input.focus();
+            if (input.value.trim()) {
+                renderResults(input.value);
+            }
+        });
+    }
+
+    function closeSearch(returnFocus) {
+        if (!isOpen) return;
+        isOpen = false;
+        wrap.classList.remove("is-open");
+        trigger.setAttribute("aria-expanded", "false");
+        fieldWrap.setAttribute("aria-hidden", "true");
+        input.tabIndex = -1;
+        closeBtn.tabIndex = -1;
+        resultsBox.classList.remove("has-query");
+        selectedIndex = -1;
+
+        if (returnFocus) {
+            trigger.focus();
+        }
+    }
+
+    trigger.addEventListener("click", openSearch);
+
+    closeBtn.addEventListener("click", () => {
+        input.value = "";
+        renderResults("");
+        closeSearch(true);
+    });
+
+    input.addEventListener("input", () => renderResults(input.value));
+
+    input.addEventListener("keydown", e => {
+        if (e.key === "Escape") {
+            e.preventDefault();
+            closeSearch(true);
+            return;
+        }
+        if (e.key === "ArrowDown" && currentMatches.length) {
+            e.preventDefault();
+            selectedIndex = (selectedIndex + 1) % currentMatches.length;
+            highlightSelected();
+        } else if (e.key === "ArrowUp" && currentMatches.length) {
+            e.preventDefault();
+            selectedIndex = (selectedIndex - 1 + currentMatches.length) % currentMatches.length;
+            highlightSelected();
+        } else if (e.key === "Enter" && currentMatches.length) {
+            e.preventDefault();
+            const pick = currentMatches[selectedIndex >= 0 ? selectedIndex : 0];
+            executeResult(pick);
+        }
+    });
+
+    wrap.addEventListener("focusout", e => {
+        if (!isOpen) return;
+        const nextFocus = e.relatedTarget;
+        if (nextFocus && wrap.contains(nextFocus)) return;
+        setTimeout(() => {
+            if (isOpen && !wrap.contains(document.activeElement)) {
+                closeSearch(false);
+            }
+        }, 0);
+    });
+
+    document.addEventListener("pointerdown", e => {
+        if (isOpen && !wrap.contains(e.target)) {
+            closeSearch(false);
+        }
+    });
+
+    window.refreshLearningSearch = () => {
+        if (isOpen && input.value.trim()) {
+            renderResults(input.value);
+        }
+    };
+}
+
+/* =========================================================
+   BACK TO TOP CONTROLLER (FOR #lessonContent SCROLL CONTAINER)
+========================================================= */
+function initBackToTop() {
+    const scrollEl = document.getElementById("lessonContent");
+    const btn = document.getElementById("backToTop");
+    const bar = document.getElementById("bttBar");
+    if (!scrollEl || !btn || !bar) return;
+
+    const CIRCUMFERENCE = 2 * Math.PI * 20.5;
+    const SHOW_OFFSET = 260;
+    let ticking = false;
+
+    function updateButton() {
+        ticking = false;
+        const scrollTop = scrollEl.scrollTop || 0;
+        const maxScroll = Math.max(1, scrollEl.scrollHeight - scrollEl.clientHeight);
+        const progress = Math.min(1, Math.max(0, scrollTop / maxScroll));
+
+        btn.classList.toggle("is-visible", scrollTop > SHOW_OFFSET);
+        bar.style.strokeDashoffset = (CIRCUMFERENCE * (1 - progress)).toFixed(2);
+    }
+
+    function onScroll() {
+        if (!ticking) {
+            ticking = true;
+            requestAnimationFrame(updateButton);
+        }
+    }
+
+    btn.addEventListener("click", () => {
+        const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        scrollEl.scrollTo({
+            top: 0,
+            behavior: reduced ? "auto" : "smooth"
+        });
+    });
+
+    window.updateBackToTop = updateButton;
+
+    scrollEl.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+    updateButton();
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+    listenToCourses();
+    initLearningDuskBackground();
+    initLearningSearch();
+    initBackToTop();
+});
 </script>
 
 <style>
 /* =========================================================
-   01. DESIGN TOKENS & SYSTEM BASE
+   01. GLASSMORPHISM DUSK TOKENS (MATCHING INDEX.HTML)
 ========================================================= */
 :root {
     --g-blue: #4285F4;
+    --g-blue-soft: #7ab0ff;
     --g-red: #EA4335;
     --g-yellow: #FBBC05;
     --g-green: #34A853;
 
-    --text-dark: #202124;
-    --text-gray: #5f6368;
+    --text-dark: #f1f3f4;
+    --text-gray: #a8b0be;
 
-    --glass-bg: rgba(255, 255, 255, 0.58);
-    --glass-bg-hover: rgba(255, 255, 255, 0.84);
-    --glass-solid: rgba(255, 255, 255, 0.94);
-    --glass-border: rgba(255, 255, 255, 0.75);
-    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-    --glass-shadow-hover: 0 14px 42px 0 rgba(31, 38, 135, 0.13);
+    --glass-bg: rgba(24, 27, 38, 0.52);
+    --glass-bg-hover: rgba(34, 38, 52, 0.74);
+    --glass-solid: rgba(20, 23, 32, 0.95);
+    --glass-border: rgba(255, 255, 255, 0.13);
+    --glass-shadow: 0 10px 34px 0 rgba(0, 0, 0, 0.36);
+    --glass-shadow-hover: 0 16px 46px 0 rgba(0, 0, 0, 0.52);
 
-    --border: rgba(0, 0, 0, 0.08);
-    --border-strong: rgba(0, 0, 0, 0.15);
+    --border: rgba(255, 255, 255, 0.09);
+    --border-strong: rgba(255, 255, 255, 0.18);
+
+    --scroll-bg-color: rgba(20, 25, 38, 0.78);
 
     --font-sans: 'Inter', sans-serif;
     --font-display: 'Outfit', sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
-}
-
-html[data-theme="dark"] {
-    --text-dark: #f1f3f4;
-    --text-gray: #9aa0a6;
-    --glass-bg: rgba(32, 33, 36, 0.65);
-    --glass-bg-hover: rgba(45, 47, 51, 0.85);
-    --glass-solid: rgba(24, 26, 30, 0.96);
-    --glass-border: rgba(255, 255, 255, 0.12);
-    --glass-shadow: 0 10px 34px 0 rgba(0, 0, 0, 0.35);
-    --glass-shadow-hover: 0 16px 46px 0 rgba(0, 0, 0, 0.5);
-    --border: rgba(255, 255, 255, 0.09);
-    --border-strong: rgba(255, 255, 255, 0.18);
 }
 
 *, *::before, *::after {
@@ -977,15 +1382,10 @@ html, body {
 }
 
 body {
-    background-color: #f4f6f9;
+    background-color: #0e1118;
     color: var(--text-dark);
     font-family: var(--font-sans);
-    transition: background-color 0.35s ease, color 0.35s ease;
     -webkit-font-smoothing: antialiased;
-}
-
-html[data-theme="dark"] body {
-    background-color: #121316;
 }
 
 ::selection {
@@ -1000,7 +1400,7 @@ button {
 }
 
 /* =========================================================
-   02. BACKGROUND ANIMATIONS
+   02. AMBIENT BLOBS & TRANSLUCENT DUSK LAYER (SAME AS INDEX.HTML)
 ========================================================= */
 .ambient-bg {
     position: fixed;
@@ -1008,33 +1408,37 @@ button {
     left: 0;
     width: 100vw;
     height: 100vh;
-    z-index: -1;
+    z-index: -2;
     overflow: hidden;
-    background: #f8f9fa;
+    background: #0e1118;
     pointer-events: none;
-    transition: background 0.35s ease;
 }
 
-html[data-theme="dark"] .ambient-bg {
-    background: #121316;
+.scroll-dusk-layer {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    pointer-events: none;
+    background-color: var(--scroll-bg-color);
+    backdrop-filter: blur(26px);
+    -webkit-backdrop-filter: blur(26px);
+    will-change: background-color;
 }
 
 .blob {
     position: absolute;
     border-radius: 50%;
-    filter: blur(90px);
-    opacity: 0.42;
+    filter: blur(95px);
+    opacity: 0.34;
     animation: float 15s infinite alternate ease-in-out;
 }
 
-html[data-theme="dark"] .blob {
-    opacity: 0.22;
-}
-
-.blob-1 { width: clamp(300px, 45vw, 500px); height: clamp(300px, 45vw, 500px); background: var(--g-blue); top: -10%; left: -5%; }
-.blob-2 { width: clamp(260px, 40vw, 400px); height: clamp(260px, 40vw, 400px); background: var(--g-red); top: 20%; right: -5%; animation-delay: 2s; }
-.blob-3 { width: clamp(280px, 42vw, 450px); height: clamp(280px, 42vw, 450px); background: var(--g-yellow); bottom: -10%; left: 20%; animation-delay: 4s; }
-.blob-4 { width: clamp(240px, 35vw, 350px); height: clamp(240px, 35vw, 350px); background: var(--g-green); bottom: 10%; right: 15%; animation-delay: 6s; }
+.blob-1 { width: clamp(280px, 45vw, 500px); height: clamp(280px, 45vw, 500px); background: var(--g-blue); top: -10%; left: -5%; }
+.blob-2 { width: clamp(240px, 40vw, 400px); height: clamp(240px, 40vw, 400px); background: var(--g-red); top: 20%; right: -5%; animation-delay: 2s; }
+.blob-3 { width: clamp(260px, 42vw, 450px); height: clamp(260px, 42vw, 450px); background: var(--g-yellow); bottom: -10%; left: 20%; animation-delay: 4s; }
+.blob-4 { width: clamp(200px, 35vw, 350px); height: clamp(200px, 35vw, 350px); background: var(--g-green); bottom: 10%; right: 15%; animation-delay: 6s; }
 
 @keyframes float {
     0% { transform: translate(0, 0) scale(1); }
@@ -1043,14 +1447,14 @@ html[data-theme="dark"] .blob {
 
 .glass {
     background: var(--glass-bg);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
     border: 1px solid var(--glass-border);
     box-shadow: var(--glass-shadow);
 }
 
 /* =========================================================
-   03. APP LAYOUT & SMART NON-OVERLAPPING HEADER
+   03. APP LAYOUT & GLASS HEADER
 ========================================================= */
 .app {
     width: 100%;
@@ -1068,8 +1472,8 @@ html[data-theme="dark"] .blob {
     justify-content: space-between;
     padding: 0 clamp(12px, 2.5vw, 24px);
     background: var(--glass-bg);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
     border-bottom: 1px solid var(--glass-border);
     box-shadow: var(--glass-shadow);
     z-index: 20;
@@ -1077,7 +1481,6 @@ html[data-theme="dark"] .blob {
     width: 100%;
 }
 
-/* Brand container prevents flex blowout */
 .brand {
     display: flex;
     align-items: center;
@@ -1129,12 +1532,12 @@ html[data-theme="dark"] .blob {
     gap: 6px;
     padding: 4px 10px;
     border-radius: 50px;
-    border: 1px solid var(--glass-border);
-    background: rgba(52, 168, 83, 0.1);
+    border: 1px solid rgba(52, 168, 83, 0.32);
+    background: rgba(52, 168, 83, 0.12);
     font-family: var(--font-mono);
     font-size: 10px;
     font-weight: 600;
-    color: var(--g-green);
+    color: #5ad47b;
     flex-shrink: 0;
 }
 .live-dot {
@@ -1148,15 +1551,16 @@ html[data-theme="dark"] .blob {
 .header-actions {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     flex-shrink: 0;
+    position: relative;
 }
 
 .header-button {
     border: 1px solid var(--glass-border);
-    background: rgba(255, 255, 255, 0.55);
+    background: rgba(255, 255, 255, 0.08);
     color: var(--text-dark);
-    padding: 7px 12px;
+    padding: 7px 14px;
     border-radius: 50px;
     font-size: 0.8rem;
     font-weight: 600;
@@ -1169,17 +1573,236 @@ html[data-theme="dark"] .blob {
     flex-shrink: 0;
 }
 
-html[data-theme="dark"] .header-button {
-    background: rgba(255, 255, 255, 0.08);
-}
-
 .header-button:hover {
     background: var(--g-blue);
     color: #ffffff;
     border-color: var(--g-blue);
 }
 
-/* 3-Column Studio Grid */
+/* =========================================================
+   03B. EXPANDING SEARCH ENGINE (OPENS TOWARD LEFT)
+========================================================= */
+.exp-search {
+    position: relative;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+}
+
+.exp-search-trigger {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--glass-border);
+    color: var(--text-dark);
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.exp-search-trigger:hover,
+.exp-search-trigger:focus-visible {
+    border-color: var(--g-blue);
+    color: var(--g-blue-soft);
+    box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.28);
+}
+
+.exp-search-trigger .material-icons-outlined {
+    font-size: 19px;
+}
+
+.exp-search-field {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    width: min(310px, calc(100vw - 24px));
+    height: 38px;
+    transform: translateY(-50%);
+    z-index: 35;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 8px 0 13px;
+    border-radius: 999px;
+    background: var(--glass-solid);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+    border: 1px solid rgba(66, 133, 244, 0.55);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+    clip-path: inset(0 0 0 calc(100% - 36px) round 999px);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    will-change: clip-path, opacity;
+    transition:
+        clip-path 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.2s ease,
+        visibility 0s linear 0.32s;
+}
+
+.exp-search.is-open .exp-search-field {
+    clip-path: inset(0 0 0 0% round 999px);
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition:
+        clip-path 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+        opacity 0.18s ease,
+        visibility 0s linear 0s;
+}
+
+.exp-search-icon {
+    color: var(--g-blue);
+    font-size: 18px;
+    flex-shrink: 0;
+    pointer-events: none;
+}
+
+.exp-search-input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    background: transparent;
+    outline: none;
+    color: var(--text-dark);
+    font-family: var(--font-sans);
+    font-size: 0.84rem;
+}
+
+.exp-search-input::placeholder {
+    color: var(--text-gray);
+}
+
+.exp-search-close {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-gray);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.exp-search-close:hover,
+.exp-search-close:focus-visible {
+    background: rgba(234, 67, 53, 0.2);
+    color: #ffffff;
+}
+
+.exp-search-close .material-icons-outlined {
+    font-size: 16px;
+}
+
+.exp-search-results {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: min(350px, calc(100vw - 24px));
+    max-height: min(400px, 62vh);
+    overflow-y: auto;
+    z-index: 40;
+    padding: 6px;
+    border-radius: 18px;
+    background: var(--glass-solid);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 18px 46px rgba(0, 0, 0, 0.52);
+    display: none;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.exp-search.is-open .exp-search-results.has-query {
+    display: flex;
+}
+
+.search-result-item {
+    width: 100%;
+    text-align: left;
+    padding: 9px 12px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    color: var(--text-dark);
+    cursor: pointer;
+    background: transparent;
+    transition: background-color 0.15s ease;
+}
+
+.search-result-item:hover,
+.search-result-item.is-selected,
+.search-result-item:focus-visible {
+    background: rgba(66, 133, 244, 0.18);
+    outline: none;
+}
+
+.search-result-meta {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--g-blue-soft);
+}
+
+.search-result-title {
+    font-family: var(--font-display);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.search-result-snippet {
+    font-size: 0.78rem;
+    color: var(--text-gray);
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.search-result-empty {
+    padding: 16px 12px;
+    text-align: center;
+    font-size: 0.82rem;
+    color: var(--text-gray);
+}
+
+@keyframes searchTargetPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(66, 133, 244, 0.8);
+    }
+    65% {
+        box-shadow: 0 0 0 10px rgba(66, 133, 244, 0);
+    }
+    100% {
+        box-shadow: none;
+    }
+}
+
+.search-hit-pulse {
+    animation: searchTargetPulse 1.3s ease-out;
+    border-radius: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .exp-search-field,
+    .exp-search.is-open .exp-search-field {
+        transition: none !important;
+    }
+}
+
+/* =========================================================
+   04. 3-COLUMN STUDIO GRID & GLASS SIDEBARS
+========================================================= */
 .main {
     flex: 1;
     min-height: 0;
@@ -1187,14 +1810,13 @@ html[data-theme="dark"] .header-button {
     grid-template-columns: minmax(220px, 260px) minmax(0, 1fr) minmax(240px, 290px);
 }
 
-/* Sidebars */
 .sidebar {
     min-width: 0;
     overflow: hidden;
     border-right: 1px solid var(--glass-border);
     background: var(--glass-bg);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
 }
 .sidebar.right {
     border-right: 0;
@@ -1208,18 +1830,17 @@ html[data-theme="dark"] .header-button {
 .sidebar-title {
     font-size: 0.74rem;
     font-weight: 700;
-    color: var(--g-blue);
+    color: var(--g-blue-soft);
     text-transform: uppercase;
     letter-spacing: 1.2px;
     margin-bottom: 12px;
     padding: 0 6px;
 }
 
-/* Course & Lesson Items */
 .course-item, .lesson-item {
     width: 100%;
     border: 1px solid transparent;
-    background: rgba(255, 255, 255, 0.38);
+    background: rgba(255, 255, 255, 0.04);
     color: var(--text-gray);
     text-align: left;
     padding: 10px 12px;
@@ -1235,14 +1856,10 @@ html[data-theme="dark"] .header-button {
     min-height: 42px;
 }
 
-html[data-theme="dark"] .course-item,
-html[data-theme="dark"] .lesson-item {
-    background: rgba(255, 255, 255, 0.04);
-}
-
 .course-item:hover, .lesson-item:hover {
     background: var(--glass-bg-hover);
     color: var(--text-dark);
+    border-color: var(--glass-border);
     transform: translateX(3px);
 }
 
@@ -1250,7 +1867,7 @@ html[data-theme="dark"] .lesson-item {
     background: var(--g-blue);
     border-color: var(--g-blue);
     color: #ffffff;
-    box-shadow: 0 6px 18px rgba(66, 133, 244, 0.28);
+    box-shadow: 0 6px 18px rgba(66, 133, 244, 0.32);
 }
 
 .item-label {
@@ -1267,8 +1884,8 @@ html[data-theme="dark"] .lesson-item {
     display: grid;
     place-items: center;
     border-radius: 8px;
-    background: rgba(66, 133, 244, 0.12);
-    color: var(--g-blue);
+    background: rgba(66, 133, 244, 0.16);
+    color: var(--g-blue-soft);
     font-family: var(--font-mono);
     font-size: 11px;
     font-weight: 700;
@@ -1292,11 +1909,10 @@ html[data-theme="dark"] .lesson-item {
     white-space: nowrap;
 }
 
-/* Accordion Chapter Button */
 .sidebar-chapter-btn {
     width: 100%;
     border: 1px solid var(--glass-border);
-    background: rgba(255, 255, 255, 0.45);
+    background: rgba(255, 255, 255, 0.05);
     color: var(--text-dark);
     text-align: left;
     padding: 10px 12px;
@@ -1321,15 +1937,11 @@ html[data-theme="dark"] .lesson-item {
     white-space: nowrap;
 }
 
-html[data-theme="dark"] .sidebar-chapter-btn {
-    background: rgba(255, 255, 255, 0.05);
-}
-
 .sidebar-chapter-btn:hover,
 .sidebar-chapter-btn.active-chap {
     background: var(--glass-bg-hover);
     border-color: var(--g-blue);
-    color: var(--g-blue);
+    color: var(--g-blue-soft);
 }
 
 .chapter-lessons-container {
@@ -1338,7 +1950,7 @@ html[data-theme="dark"] .sidebar-chapter-btn {
     gap: 4px;
     padding-left: 8px;
     margin-bottom: 10px;
-    border-left: 2px solid rgba(66, 133, 244, 0.3);
+    border-left: 2px solid rgba(66, 133, 244, 0.35);
     margin-left: 10px;
     padding-top: 6px;
 }
@@ -1365,8 +1977,8 @@ html[data-theme="dark"] .sidebar-chapter-btn {
 
 .lesson-vid-icon {
     font-size: 9px;
-    color: var(--g-red);
-    background: rgba(234, 67, 53, 0.14);
+    color: #ff7b72;
+    background: rgba(234, 67, 53, 0.16);
     padding: 2px 6px;
     border-radius: 50px;
     font-family: var(--font-mono);
@@ -1381,7 +1993,7 @@ html[data-theme="dark"] .sidebar-chapter-btn {
 .quiz-sidebar-btn {
     margin-top: 4px;
     border: 1px dashed rgba(52, 168, 83, 0.5);
-    background: rgba(52, 168, 83, 0.08);
+    background: rgba(52, 168, 83, 0.1);
     color: var(--text-dark);
 }
 .quiz-badge-icon {
@@ -1397,7 +2009,7 @@ html[data-theme="dark"] .sidebar-chapter-btn {
     padding: 2px 7px;
     border-radius: 50px;
     background: rgba(52, 168, 83, 0.18);
-    color: var(--g-green);
+    color: #5ad47b;
     flex-shrink: 0;
     white-space: nowrap;
 }
@@ -1430,7 +2042,7 @@ html[data-theme="dark"] .sidebar-chapter-btn {
 }
 .final-exam-sidebar-btn.active {
     border-color: var(--g-blue);
-    box-shadow: 0 8px 20px rgba(66, 133, 244, 0.18);
+    box-shadow: 0 8px 20px rgba(66, 133, 244, 0.25);
 }
 .final-exam-info-group {
     display: flex;
@@ -1442,7 +2054,7 @@ html[data-theme="dark"] .sidebar-chapter-btn {
     width: 32px;
     height: 32px;
     border-radius: 10px;
-    background: rgba(66, 133, 244, 0.14);
+    background: rgba(66, 133, 244, 0.18);
     display: grid;
     place-items: center;
     font-size: 15px;
@@ -1471,8 +2083,11 @@ html[data-theme="dark"] .sidebar-chapter-btn {
     flex-shrink: 0;
 }
 
-/* Center Content & Reading Frame */
+/* =========================================================
+   05. CENTER CONTENT & READING FRAME + BACK TO TOP
+========================================================= */
 .content {
+    position: relative;
     min-width: 0;
     overflow: hidden;
     display: flex;
@@ -1484,8 +2099,103 @@ html[data-theme="dark"] .sidebar-chapter-btn {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
-    padding: clamp(16px, 3.5vw, 36px) clamp(12px, 3vw, 48px) 70px;
+    padding: clamp(16px, 3.5vw, 36px) clamp(12px, 3vw, 48px) 84px;
 }
+
+/* Back to Top button anchored inside .content so it never overlaps sidebars */
+.back-to-top {
+    position: absolute;
+    right: 22px;
+    bottom: 22px;
+    z-index: 30;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    color: var(--text-dark);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translate3d(0, 14px, 0) scale(0.9);
+    will-change: transform, opacity;
+    transition:
+        opacity 0.28s ease,
+        transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        visibility 0s linear 0.28s;
+}
+
+.back-to-top.is-visible {
+    opacity: 0.92;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translate3d(0, 0, 0) scale(1);
+    transition:
+        opacity 0.28s ease,
+        transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        visibility 0s linear 0s;
+}
+
+.back-to-top:hover,
+.back-to-top:focus-visible {
+    opacity: 1;
+    background: var(--glass-bg-hover);
+    border-color: rgba(66, 133, 244, 0.55);
+    color: var(--g-blue-soft);
+    transform: translate3d(0, -3px, 0) scale(1.04);
+    box-shadow: 0 10px 28px rgba(66, 133, 244, 0.28);
+}
+
+.back-to-top:active {
+    transform: translate3d(0, 0, 0) scale(0.95);
+}
+
+.back-to-top .material-icons-outlined {
+    font-size: 21px;
+    position: relative;
+    z-index: 2;
+}
+
+.btt-progress {
+    position: absolute;
+    inset: -1px;
+    width: calc(100% + 2px);
+    height: calc(100% + 2px);
+    transform: rotate(-90deg);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.btt-track {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.08);
+    stroke-width: 2;
+}
+
+.btt-bar {
+    fill: none;
+    stroke: var(--g-blue);
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-dasharray: 128.8;
+    stroke-dashoffset: 128.8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .back-to-top {
+        transform: none !important;
+        transition: opacity 0.15s ease !important;
+    }
+}
+
 .breadcrumbs {
     max-width: 860px;
     margin: 0 auto 16px;
@@ -1514,8 +2224,8 @@ html[data-theme="dark"] .sidebar-chapter-btn {
     display: inline-flex;
     padding: 5px 12px;
     border-radius: 50px;
-    color: var(--g-blue);
-    background: rgba(66, 133, 244, 0.12);
+    color: var(--g-blue-soft);
+    background: rgba(66, 133, 244, 0.16);
     font-size: 0.72rem;
     font-weight: 700;
     letter-spacing: 0.7px;
@@ -1575,7 +2285,7 @@ html[data-theme="dark"] .sidebar-chapter-btn {
 }
 .video-player-bar {
     padding: 10px 14px;
-    background: rgba(255, 255, 255, 0.45);
+    background: rgba(255, 255, 255, 0.04);
     border-bottom: 1px solid var(--glass-border);
     display: flex;
     align-items: center;
@@ -1585,9 +2295,6 @@ html[data-theme="dark"] .sidebar-chapter-btn {
     font-weight: 700;
     color: var(--text-gray);
     flex-wrap: wrap;
-}
-html[data-theme="dark"] .video-player-bar {
-    background: rgba(255, 255, 255, 0.04);
 }
 .video-bar-left {
     display: flex;
@@ -1611,7 +2318,7 @@ html[data-theme="dark"] .video-player-bar {
 }
 .srv-btn {
     border: 1px solid var(--glass-border);
-    background: rgba(255, 255, 255, 0.65);
+    background: rgba(255, 255, 255, 0.08);
     color: var(--text-dark);
     padding: 6px 11px;
     border-radius: 50px;
@@ -1625,8 +2332,9 @@ html[data-theme="dark"] .video-player-bar {
     transition: all 0.2s ease;
     white-space: nowrap;
 }
-html[data-theme="dark"] .srv-btn {
-    background: rgba(255, 255, 255, 0.08);
+.srv-btn:hover {
+    border-color: var(--g-blue);
+    color: #ffffff;
 }
 .srv-btn.primary-play {
     background: var(--g-blue);
@@ -1677,7 +2385,7 @@ html[data-theme="dark"] .srv-btn {
     align-items: center;
     justify-content: center;
     gap: 10px;
-    background: radial-gradient(circle, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 100%);
+    background: radial-gradient(circle, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.58) 100%);
     padding: 14px;
     text-align: center;
 }
@@ -1702,7 +2410,7 @@ html[data-theme="dark"] .srv-btn {
     letter-spacing: 0.5px;
     padding: 5px 12px;
     border-radius: 50px;
-    background: rgba(20, 22, 26, 0.8);
+    background: rgba(20, 22, 30, 0.85);
     backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
@@ -1717,7 +2425,7 @@ html[data-theme="dark"] .srv-btn {
 .assessment-banner-card {
     padding: 18px 20px;
     border-radius: 18px;
-    border: 1px solid rgba(52, 168, 83, 0.4);
+    border: 1px solid rgba(52, 168, 83, 0.42);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1725,7 +2433,7 @@ html[data-theme="dark"] .srv-btn {
     flex-wrap: wrap;
 }
 .assessment-banner-card.final {
-    border-color: rgba(66, 133, 244, 0.4);
+    border-color: rgba(66, 133, 244, 0.45);
 }
 .assessment-text-area {
     flex: 1;
@@ -1733,7 +2441,7 @@ html[data-theme="dark"] .srv-btn {
 }
 .assessment-kicker {
     font-size: 0.7rem;
-    color: var(--g-green);
+    color: #5ad47b;
     font-weight: 700;
     letter-spacing: 0.8px;
     text-transform: uppercase;
@@ -1771,7 +2479,7 @@ html[data-theme="dark"] .srv-btn {
     padding: 10px 14px;
     border-radius: 14px;
     border: 1px solid var(--glass-border);
-    background: rgba(66, 133, 244, 0.07);
+    background: rgba(66, 133, 244, 0.08);
     display: flex;
     flex-wrap: wrap;
     gap: 8px 12px;
@@ -1781,7 +2489,7 @@ html[data-theme="dark"] .srv-btn {
     align-items: center;
 }
 .quiz-telemetry-strip strong {
-    color: var(--g-blue);
+    color: var(--g-blue-soft);
 }
 .sep-slash {
     opacity: 0.4;
@@ -1796,9 +2504,6 @@ html[data-theme="dark"] .srv-btn {
     padding: clamp(16px, 3vw, 24px);
     border-radius: 18px;
     border: 1px solid var(--glass-border);
-    background: rgba(255, 255, 255, 0.48);
-}
-html[data-theme="dark"] .quiz-question-card {
     background: rgba(255, 255, 255, 0.04);
 }
 .quiz-question-card.graded-correct {
@@ -1818,16 +2523,13 @@ html[data-theme="dark"] .quiz-question-card {
 }
 .quiz-q-num {
     font-weight: 700;
-    color: var(--g-blue);
+    color: var(--g-blue-soft);
 }
 .quiz-q-pts {
     padding: 3px 8px;
     border-radius: 50px;
     border: 1px solid var(--glass-border);
-    background: rgba(255, 255, 255, 0.5);
-}
-html[data-theme="dark"] .quiz-q-pts {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.06);
 }
 .quiz-q-text {
     font-family: var(--font-display);
@@ -1846,7 +2548,7 @@ html[data-theme="dark"] .quiz-q-pts {
     padding: 10px 12px;
     border-radius: 14px;
     border: 1px solid var(--glass-border);
-    background: rgba(255, 255, 255, 0.65);
+    background: rgba(255, 255, 255, 0.06);
     color: var(--text-dark);
     text-align: left;
     display: flex;
@@ -1860,9 +2562,6 @@ html[data-theme="dark"] .quiz-q-pts {
     min-height: 44px;
     word-break: break-word;
 }
-html[data-theme="dark"] .quiz-option-btn {
-    background: rgba(255, 255, 255, 0.06);
-}
 .quiz-option-btn:hover:not(:disabled) {
     border-color: var(--g-blue);
     transform: translateY(-1px);
@@ -1871,8 +2570,8 @@ html[data-theme="dark"] .quiz-option-btn {
     width: 26px;
     height: 26px;
     border-radius: 50%;
-    background: rgba(66, 133, 244, 0.12);
-    color: var(--g-blue);
+    background: rgba(66, 133, 244, 0.18);
+    color: var(--g-blue-soft);
     display: grid;
     place-items: center;
     font-family: var(--font-mono);
@@ -1885,7 +2584,7 @@ html[data-theme="dark"] .quiz-option-btn {
 }
 .quiz-option-btn.selected {
     border-color: var(--g-blue) !important;
-    background: rgba(66, 133, 244, 0.15);
+    background: rgba(66, 133, 244, 0.18);
 }
 .quiz-option-btn.selected .opt-letter {
     background: var(--g-blue);
@@ -1893,7 +2592,7 @@ html[data-theme="dark"] .quiz-option-btn {
 }
 .quiz-option-btn.correct-option {
     border-color: var(--g-green) !important;
-    background: rgba(52, 168, 83, 0.16);
+    background: rgba(52, 168, 83, 0.18);
 }
 .quiz-option-btn.correct-option .opt-letter {
     background: var(--g-green);
@@ -1901,7 +2600,7 @@ html[data-theme="dark"] .quiz-option-btn {
 }
 .quiz-option-btn.wrong-option {
     border-color: var(--g-red) !important;
-    background: rgba(234, 67, 53, 0.16);
+    background: rgba(234, 67, 53, 0.18);
 }
 .quiz-option-btn.wrong-option .opt-letter {
     background: var(--g-red);
@@ -1916,14 +2615,14 @@ html[data-theme="dark"] .quiz-option-btn {
     line-height: 1.5;
 }
 .quiz-feedback-box.ok {
-    background: rgba(52, 168, 83, 0.12);
-    border: 1px solid rgba(52, 168, 83, 0.4);
-    color: var(--g-green);
+    background: rgba(52, 168, 83, 0.14);
+    border: 1px solid rgba(52, 168, 83, 0.42);
+    color: #5ad47b;
 }
 .quiz-feedback-box.err {
-    background: rgba(234, 67, 53, 0.12);
-    border: 1px solid rgba(234, 67, 53, 0.4);
-    color: var(--g-red);
+    background: rgba(234, 67, 53, 0.14);
+    border: 1px solid rgba(234, 67, 53, 0.42);
+    color: #ff7b72;
 }
 .quiz-explanation-text {
     margin-top: 4px;
@@ -1936,15 +2635,12 @@ html[data-theme="dark"] .quiz-option-btn {
     padding: 18px 20px;
     border-radius: 18px;
     border: 1px solid var(--glass-border);
-    background: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.05);
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 12px;
-}
-html[data-theme="dark"] .quiz-submit-footer {
-    background: rgba(255, 255, 255, 0.05);
 }
 .quiz-submit-info {
     font-size: 0.85rem;
@@ -1962,14 +2658,11 @@ html[data-theme="dark"] .quiz-submit-footer {
     padding: clamp(18px, 3vw, 26px);
     border-radius: 20px;
     border: 2px solid var(--glass-border);
-    background: rgba(255, 255, 255, 0.65);
+    background: rgba(255, 255, 255, 0.06);
     display: flex;
     align-items: center;
     gap: 20px;
     flex-wrap: wrap;
-}
-html[data-theme="dark"] .score-result-card {
-    background: rgba(255, 255, 255, 0.06);
 }
 .score-result-card.passed { border-color: var(--g-green); }
 .score-result-card.failed { border-color: var(--g-red); }
@@ -2021,12 +2714,12 @@ html[data-theme="dark"] .score-result-card {
     margin-bottom: 8px;
 }
 .score-result-card.passed .score-status-badge {
-    color: var(--g-green);
-    background: rgba(52, 168, 83, 0.14);
+    color: #5ad47b;
+    background: rgba(52, 168, 83, 0.16);
 }
 .score-result-card.failed .score-status-badge {
-    color: var(--g-red);
-    background: rgba(234, 67, 53, 0.14);
+    color: #ff7b72;
+    background: rgba(234, 67, 53, 0.16);
 }
 .score-details-box h3 {
     font-family: var(--font-display);
@@ -2048,10 +2741,10 @@ html[data-theme="dark"] .score-result-card {
 /* Code & Pre Blocks */
 .content-body code {
     font-family: var(--font-mono);
-    background: rgba(66, 133, 244, 0.12);
+    background: rgba(66, 133, 244, 0.16);
     padding: 2px 6px;
     border-radius: 5px;
-    color: var(--g-blue);
+    color: var(--g-blue-soft);
     font-size: 0.84rem;
 }
 .content-body pre, .article-block pre {
@@ -2059,7 +2752,7 @@ html[data-theme="dark"] .score-result-card {
     -webkit-overflow-scrolling: touch;
     padding: 16px;
     border-radius: 14px;
-    background: #16181d;
+    background: #10131a;
     border: 1px solid var(--glass-border);
     margin: 18px 0;
     box-shadow: var(--glass-shadow);
@@ -2081,7 +2774,7 @@ html[data-theme="dark"] .score-result-card {
 }
 .article-block h3 {
     font-family: var(--font-display);
-    color: var(--g-blue);
+    color: var(--g-blue-soft);
     font-size: 1.2rem;
     margin-bottom: 10px;
 }
@@ -2106,7 +2799,7 @@ html[data-theme="dark"] .score-result-card {
 }
 .nav-button {
     border: 1px solid var(--glass-border);
-    background: rgba(255, 255, 255, 0.65);
+    background: rgba(255, 255, 255, 0.08);
     color: var(--text-dark);
     padding: 11px 16px;
     border-radius: 50px;
@@ -2120,13 +2813,10 @@ html[data-theme="dark"] .score-result-card {
     justify-content: center;
     min-height: 42px;
 }
-html[data-theme="dark"] .nav-button {
-    background: rgba(255, 255, 255, 0.08);
-}
 .nav-button:hover:not(:disabled) {
     transform: translateY(-1px);
     border-color: var(--g-blue);
-    color: var(--g-blue);
+    color: var(--g-blue-soft);
 }
 .nav-button.primary {
     background: var(--g-blue);
@@ -2136,7 +2826,7 @@ html[data-theme="dark"] .nav-button {
 .nav-button.primary:hover:not(:disabled) {
     background: #3367d6;
     color: #ffffff;
-    box-shadow: 0 4px 14px rgba(66, 133, 244, 0.3);
+    box-shadow: 0 4px 14px rgba(66, 133, 244, 0.35);
 }
 .nav-button:disabled {
     opacity: 0.32;
@@ -2170,8 +2860,8 @@ html[data-theme="dark"] .nav-button {
     width: 52px;
     height: 52px;
     border-radius: 50%;
-    background: rgba(66, 133, 244, 0.12);
-    color: var(--g-blue);
+    background: rgba(66, 133, 244, 0.16);
+    color: var(--g-blue-soft);
     display: grid;
     place-items: center;
     font-size: 22px;
@@ -2204,25 +2894,24 @@ html[data-theme="dark"] .nav-button {
 .toast.error { background: var(--g-red); color: #fff; }
 
 /* =========================================================
-   04. ADAPTIVE RESPONSIVE BREAKPOINTS (FIXED SAMSUNG & MOBILE COLLISION)
+   06. ADAPTIVE RESPONSIVE BREAKPOINTS
 ========================================================= */
 .mobile-toggle-btn { display: none; }
-.mobile-overlay { 
+.mobile-overlay {
     display: none;
     position: fixed;
     inset: 0;
     top: 60px;
-    background: rgba(15, 17, 21, 0.45);
-    z-index: 95;
+    background: rgba(10, 12, 18, 0.55);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
+    z-index: 95;
     opacity: 0;
     transition: opacity 0.25s ease;
     pointer-events: none;
 }
 .mobile-overlay.show { opacity: 1; pointer-events: auto; }
 
-/* Tablet & Smaller Laptops (<= 1080px) */
 @media (max-width: 1080px) {
     .main {
         grid-template-columns: 220px 1fr 250px;
@@ -2232,21 +2921,19 @@ html[data-theme="dark"] .nav-button {
     }
 }
 
-/* Mobile & Touch Viewports (<= 900px) */
 @media (max-width: 900px) {
     .header {
         height: 60px;
         min-height: 60px;
         padding: 0 12px;
     }
-    
-    /* جلوگیری قطعی از تداخل با دکمه در تمام ابعاد گوشی */
+
     .brand-sub, .live-pill {
         display: none !important;
     }
     .brand-name {
         font-size: clamp(0.95rem, 3.8vw, 1.1rem);
-        max-width: 180px;
+        max-width: 170px;
     }
     .header-actions {
         gap: 6px;
@@ -2272,7 +2959,6 @@ html[data-theme="dark"] .nav-button {
         overflow: hidden;
     }
 
-    /* Courses Horizontal Top Rail */
     .sidebar {
         order: 1;
         width: 100%;
@@ -2316,7 +3002,6 @@ html[data-theme="dark"] .nav-button {
         font-size: 10px;
     }
 
-    /* Drawer Side Menu */
     .sidebar.right {
         position: fixed;
         top: 60px;
@@ -2328,7 +3013,7 @@ html[data-theme="dark"] .nav-button {
         transform: translateX(105%);
         transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
         border-left: 1px solid var(--glass-border);
-        box-shadow: -10px 0 32px rgba(0, 0, 0, 0.22);
+        box-shadow: -10px 0 32px rgba(0, 0, 0, 0.5);
     }
     .sidebar.right.open {
         transform: translateX(0);
@@ -2339,7 +3024,6 @@ html[data-theme="dark"] .nav-button {
         overflow-y: auto;
     }
 
-    /* Center Content Container */
     .content {
         order: 2;
         flex: 1;
@@ -2349,25 +3033,38 @@ html[data-theme="dark"] .nav-button {
     .content-scroll {
         height: 100%;
         overflow-y: auto;
-        padding: 14px 10px 80px;
+        padding: 14px 10px 84px;
+    }
+    .back-to-top {
+        right: 14px;
+        bottom: 16px;
+        width: 42px;
+        height: 42px;
+    }
+    .back-to-top .material-icons-outlined {
+        font-size: 19px;
     }
 }
 
-/* Extra Compact Phones (<= 480px) */
 @media (max-width: 480px) {
     .header {
         padding: 0 10px;
         gap: 6px;
     }
     .brand-name {
-        max-width: 140px;
+        max-width: 130px;
     }
     .header-actions {
-        gap: 4px;
+        gap: 5px;
     }
     .header-button {
         padding: 6px 8px;
         font-size: 0.72rem;
+    }
+    .exp-search,
+    .exp-search-trigger {
+        width: 34px;
+        height: 34px;
     }
     .lesson-page {
         padding: 16px 12px;
@@ -2412,13 +3109,12 @@ html[data-theme="dark"] .nav-button {
     }
 }
 
-/* Very Small Screens (<= 360px) */
 @media (max-width: 360px) {
     .logo-dots {
         display: none;
     }
     .brand-name {
-        max-width: 110px;
+        max-width: 105px;
         font-size: 0.9rem;
     }
     .header-button {
@@ -2434,13 +3130,35 @@ html[data-theme="dark"] .nav-button {
 </head>
 <body>
 
-<!-- Ambient Glass Background Blobs -->
+<!-- Smooth Overlay Wipe Reveal when arriving from index.html -->
+<script>
+  (function () {
+    try {
+      if (!sessionStorage.getItem("yk_wipe_in")) return;
+      sessionStorage.removeItem("yk_wipe_in");
+    } catch (_) { return; }
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const p = document.createElement("div");
+    p.style.cssText = "position:fixed;inset:0;z-index:9999;background:#121622;transform:translate3d(0,0,0);transition:transform 1.15s cubic-bezier(0.22,1,0.36,1);pointer-events:none;";
+    document.body.appendChild(p);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      p.style.transform = "translate3d(100%,0,0)";
+    }));
+    setTimeout(() => p.remove(), 1250);
+  })();
+</script>
+
+<!-- Ambient Glass Background Blobs (Matching index.html) -->
 <div class="ambient-bg">
     <div class="blob blob-1"></div>
     <div class="blob blob-2"></div>
     <div class="blob blob-3"></div>
     <div class="blob blob-4"></div>
 </div>
+
+<!-- Scroll-Driven Translucent Dusk Layer (Matching index.html) -->
+<div class="scroll-dusk-layer" id="scrollDuskLayer" aria-hidden="true"></div>
 
 <div id="mobileOverlay" class="mobile-overlay" onclick="window.toggleMobileMenu()"></div>
 
@@ -2455,11 +3173,49 @@ html[data-theme="dark"] .nav-button {
             </div>
             <span class="brand-name">Yashar Kamran</span>
             <span class="brand-sub">Learning Studio</span>
-            <span class="live-pill"><span class="live-dot"></span> LIVE DB</span>
+            <span class="live-pill"><span class="live-dot"></span></span>
         </div>
+
         <div class="header-actions">
+            <!-- Expanding Live Search Engine -->
+            <div class="exp-search" id="expSearch">
+                <button
+                    type="button"
+                    class="exp-search-trigger"
+                    id="searchTrigger"
+                    aria-label="Open search"
+                    aria-expanded="false"
+                    aria-controls="searchFieldWrap"
+                >
+                    <span class="material-icons-outlined" aria-hidden="true">search</span>
+                </button>
+
+                <div class="exp-search-field" id="searchFieldWrap" aria-hidden="true">
+                    <span class="material-icons-outlined exp-search-icon" aria-hidden="true">search</span>
+                    <input
+                        type="search"
+                        id="searchInput"
+                        class="exp-search-input"
+                        placeholder="Search courses, lessons, quizzes..."
+                        autocomplete="off"
+                        tabindex="-1"
+                        aria-label="Search learning content"
+                    >
+                    <button
+                        type="button"
+                        class="exp-search-close"
+                        id="searchCloseBtn"
+                        aria-label="Close search"
+                        tabindex="-1"
+                    >
+                        <span class="material-icons-outlined" aria-hidden="true">close</span>
+                    </button>
+                </div>
+
+                <div class="exp-search-results" id="searchResults" role="listbox" aria-label="Search results"></div>
+            </div>
+
             <button class="header-button mobile-toggle-btn" onclick="window.toggleMobileMenu()">📑 Chapters</button>
-            <button class="header-button" onclick="toggleSurfaceTheme()">◐ Tone</button>
             <button class="header-button" onclick="location.href='index.html'">← Main Site</button>
         </div>
     </header>
@@ -2482,6 +3238,15 @@ html[data-theme="dark"] .nav-button {
                     <p>Select a course above or on the left to inspect chapters, notes, videos, quizzes, and lab code.</p>
                 </div>
             </div>
+
+            <!-- Back to Top Floating Button -->
+            <button type="button" class="back-to-top glass" id="backToTop" aria-label="Back to top" title="Back to top">
+                <svg class="btt-progress" viewBox="0 0 46 46" aria-hidden="true">
+                    <circle class="btt-track" cx="23" cy="23" r="20.5" />
+                    <circle class="btt-bar" id="bttBar" cx="23" cy="23" r="20.5" />
+                </svg>
+                <span class="material-icons-outlined" aria-hidden="true">arrow_upward</span>
+            </button>
         </section>
 
         <!-- Right Sidebar: Accordion Chapters, Lessons, Quizzes & Final Exam -->
