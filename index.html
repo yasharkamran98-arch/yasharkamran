@@ -49,6 +49,13 @@
 
             /* Scroll-Driven Translucent Dusk Background Token */
             --scroll-bg-color: rgba(20, 25, 38, 0.78);
+
+            /* Gooey Menu Tokens (Warm Dusk Orange tailored to site theme) */
+            --gooey-color: #ea6a1f;
+            --gooey-fg: #ffffff;
+            --gooey-border: rgba(255, 214, 180, 0.35);
+            --gooey-sheen: rgba(255, 255, 255, 0.24);
+            --gooey-shadow: 0 10px 26px rgba(234, 106, 31, 0.36);
         }
 
         html[data-theme="dark"],
@@ -1686,7 +1693,9 @@
         }
 
         body.intro-lock .back-to-top,
-        body.drawer-open .back-to-top {
+        body.drawer-open .back-to-top,
+        body.intro-lock .gooey-menu,
+        body.drawer-open .gooey-menu {
             opacity: 0 !important;
             pointer-events: none !important;
         }
@@ -1695,6 +1704,200 @@
             .back-to-top {
                 transform: none !important;
                 transition: opacity 0.15s ease !important;
+            }
+        }
+
+        /* ==========================================================================
+           09C. GOOEY ARC MENU (MOBILE & TABLET ONLY — BOTTOM LEFT, TEXT LABELS)
+           Settings: Layout=Arc, How gooey=Medium, Speed=Normal, Button color=Orange
+        ========================================================================== */
+        .gooey-svg-defs {
+            position: absolute;
+            width: 0;
+            height: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .gooey-menu {
+            display: none;
+            position: fixed;
+            left: 16px;
+            bottom: 20px;
+            width: 218px;
+            height: 218px;
+            z-index: 160;
+            pointer-events: none;
+            user-select: none;
+            -webkit-user-select: none;
+            --r: 132px;
+        }
+
+        /* Compact filtered layer holding plain single-color circles */
+        .gooey-blobs {
+            position: absolute;
+            inset: 0;
+            filter: url(#gooey-filter-tablet);
+            pointer-events: none;
+        }
+
+        .gooey-blob {
+            position: absolute;
+            border-radius: 50%;
+            background: var(--gooey-color);
+            will-change: transform;
+        }
+
+        .gooey-blob-main {
+            left: 12px;
+            bottom: 12px;
+            width: 56px;
+            height: 56px;
+            transition: transform 0.36s cubic-bezier(0.34, 1.45, 0.64, 1);
+        }
+
+        .gooey-menu.is-open .gooey-blob-main {
+            transform: scale(0.94);
+        }
+
+        .gooey-blob-item {
+            left: 13px;
+            bottom: 13px;
+            width: 54px;
+            height: 54px;
+            transform: translate3d(0, 0, 0) scale(0.55);
+            transition: transform 0.42s cubic-bezier(0.34, 1.4, 0.64, 1);
+            transition-delay: calc(var(--i, 0) * 35ms);
+        }
+
+        .gooey-menu.is-open .gooey-blob-item {
+            transform: translate3d(var(--tx), var(--ty), 0) scale(1);
+        }
+
+        .gooey-menu:not(.is-open) .gooey-blob-item {
+            transition-duration: 0.32s;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-delay: calc((3 - var(--i, 0)) * 22ms);
+        }
+
+        /* Unfiltered real button layer for crisp text & keyboard reachability */
+        .gooey-buttons {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .gooey-trigger {
+            position: absolute;
+            left: 12px;
+            bottom: 12px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            color: var(--gooey-fg);
+            pointer-events: auto;
+            z-index: 3;
+            background: linear-gradient(145deg, var(--gooey-sheen) 0%, transparent 60%);
+            border: 1px solid var(--gooey-border);
+            box-shadow: var(--gooey-shadow), inset 0 1.5px 1px var(--gooey-sheen);
+            transition: transform 0.36s cubic-bezier(0.34, 1.45, 0.64, 1), border-color 0.2s ease;
+        }
+
+        .gooey-trigger:focus-visible,
+        .gooey-item:focus-visible {
+            box-shadow: 0 0 0 3px #ffffff, var(--gooey-shadow);
+        }
+
+        .gooey-trigger .material-icons-outlined {
+            font-size: 24px;
+            transition: transform 0.36s cubic-bezier(0.34, 1.45, 0.64, 1);
+        }
+
+        .gooey-menu.is-open .gooey-trigger {
+            transform: scale(0.94);
+        }
+
+        .gooey-menu.is-open .gooey-trigger .material-icons-outlined {
+            transform: rotate(45deg);
+        }
+
+        .gooey-item {
+            position: absolute;
+            left: 13px;
+            bottom: 13px;
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 3px;
+            color: var(--gooey-fg);
+            font-family: var(--font-brand);
+            font-size: 0.67rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            line-height: 1;
+            text-align: center;
+            z-index: 2;
+            background: linear-gradient(145deg, var(--gooey-sheen) 0%, transparent 62%);
+            border: 1px solid var(--gooey-border);
+            opacity: 0;
+            pointer-events: none;
+            transform: translate3d(0, 0, 0) scale(0.55);
+            will-change: transform, opacity;
+            transition:
+                transform 0.42s cubic-bezier(0.34, 1.4, 0.64, 1),
+                opacity 0.24s ease;
+            transition-delay: calc(var(--i, 0) * 35ms);
+        }
+
+        .gooey-menu.is-open .gooey-item {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translate3d(var(--tx), var(--ty), 0) scale(1);
+        }
+
+        .gooey-menu:not(.is-open) .gooey-item {
+            transition-duration: 0.32s, 0.16s;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1), ease;
+            transition-delay: calc((3 - var(--i, 0)) * 22ms), 0ms;
+        }
+
+        .gooey-item:active {
+            transform: translate3d(var(--tx), var(--ty), 0) scale(0.92);
+        }
+
+        /* Bottom-Left Arc Coordinates: 4 items fanning from Up (-90deg) to Right (0deg) */
+        .gooey-pos-0 { --i: 0; --tx: 0px;                      --ty: calc(var(--r) * -1); }
+        .gooey-pos-1 { --i: 1; --tx: calc(var(--r) * 0.5);     --ty: calc(var(--r) * -0.866); }
+        .gooey-pos-2 { --i: 2; --tx: calc(var(--r) * 0.866);   --ty: calc(var(--r) * -0.5); }
+        .gooey-pos-3 { --i: 3; --tx: calc(var(--r) * 1);       --ty: 0px; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .gooey-blobs {
+                filter: none !important;
+            }
+            .gooey-blob-item {
+                transform: translate3d(var(--tx), var(--ty), 0) scale(1) !important;
+                opacity: 0;
+                transition: opacity 0.2s ease !important;
+                transition-delay: 0ms !important;
+            }
+            .gooey-menu.is-open .gooey-blob-item {
+                opacity: 1;
+            }
+            .gooey-item {
+                transform: translate3d(var(--tx), var(--ty), 0) scale(1) !important;
+                transition: opacity 0.2s ease !important;
+                transition-delay: 0ms !important;
+            }
+            .gooey-trigger,
+            .gooey-trigger .material-icons-outlined,
+            .gooey-blob-main {
+                transition: none !important;
             }
         }
 
@@ -1799,10 +2002,6 @@
         /* ==========================================================================
            10. RESPONSIVE MEDIA QUERIES (FLUID LAYOUTS)
         ========================================================================== */
-        .mobile-quick-bar {
-            display: none;
-        }
-
         @media (max-width: 1080px) {
             header.top-nav {
                 padding: 12px 3.5%;
@@ -1829,55 +2028,28 @@
             }
         }
 
-        /* Tablet & Phone: hide top nav links, use bottom mobile-quick-bar */
+        /* Tablet & Phone: hide top nav links, show bottom-left Gooey Arc Menu */
         @media (max-width: 1024px) {
             .nav-menu {
                 display: none;
             }
+            .gooey-menu {
+                display: block;
+            }
             footer {
-                padding-bottom: 90px;
-            }
-            .mobile-quick-bar {
-                display: grid;
-                grid-template-columns: repeat(4, minmax(0, 1fr));
-                gap: 6px;
-                position: fixed;
-                bottom: 12px;
-                left: 12px;
-                right: 12px;
-                z-index: 95;
-                padding: 6px;
-                border-radius: 50px;
-            }
-            .mobile-quick-link {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                padding: 8px 2px;
-                border-radius: 50px;
-                font-size: 0.78rem;
-                font-weight: 600;
-                color: var(--text-gray);
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-            .mobile-quick-link.highlight {
-                background: var(--g-blue);
-                color: #ffffff;
+                padding-bottom: 84px;
             }
             .toast-banner {
-                bottom: 76px;
+                bottom: 86px;
             }
-            /* Position Back-to-Top cleanly above mobile-quick-bar */
             .back-to-top {
-                right: 14px;
-                bottom: 74px;
-                width: 42px;
-                height: 42px;
+                right: 16px;
+                bottom: 24px;
+                width: 44px;
+                height: 44px;
             }
             .back-to-top .material-icons-outlined {
-                font-size: 19px;
+                font-size: 20px;
             }
         }
 
@@ -1972,17 +2144,32 @@
             footer {
                 flex-direction: column;
                 text-align: center;
-                padding: 24px 4% 90px;
+                padding: 24px 4% 88px;
             }
             .social-links {
                 justify-content: center;
             }
-            .mobile-quick-link {
-                font-size: 0.75rem;
-            }
             .toast-banner {
                 left: 14px;
                 right: 14px;
+            }
+            /* Lighter blur and compact filtered layer on phones */
+            .gooey-menu {
+                left: 12px;
+                bottom: 18px;
+                width: 204px;
+                height: 204px;
+                --r: 122px;
+            }
+            .gooey-blobs {
+                filter: url(#gooey-filter-phone);
+            }
+            .gooey-blob-item,
+            .gooey-item {
+                width: 52px;
+                height: 52px;
+                left: 14px;
+                bottom: 14px;
             }
         }
 
@@ -2025,9 +2212,6 @@
             .logo-dots {
                 display: none;
             }
-            .mobile-quick-link {
-                font-size: 0.7rem;
-            }
         }
     </style>
 </head>
@@ -2065,6 +2249,22 @@
 
     <!-- Scroll-Driven Translucent Dusk Color Overlay -->
     <div class="scroll-dusk-layer" id="scrollDuskLayer" aria-hidden="true"></div>
+
+    <!-- SVG Gooey Filters (Medium gooeyness; lighter blur on phones) -->
+    <svg class="gooey-svg-defs" aria-hidden="true">
+        <defs>
+            <filter id="gooey-filter-tablet">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur" />
+                <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 19 -9" result="goo" />
+                <feComposite in="SourceGraphic" in2="goo" operator="atop" />
+            </filter>
+            <filter id="gooey-filter-phone">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur" />
+                <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -8.5" result="goo" />
+                <feComposite in="SourceGraphic" in2="goo" operator="atop" />
+            </filter>
+        </defs>
+    </svg>
 
     <!-- ==========================================================================
          TOP NAVIGATION (THE KEYWORD GLASS STYLE)
@@ -2379,6 +2579,37 @@
 
     </main>
 
+    <!-- Gooey Arc Menu (Mobile & Tablet Only — Bottom Left, Text Labels) -->
+    <nav class="gooey-menu" id="gooeyMenu" aria-label="Mobile Quick Navigation">
+        <!-- Filtered plain single-color circles layer -->
+        <div class="gooey-blobs" aria-hidden="true">
+            <span class="gooey-blob gooey-blob-item gooey-pos-0"></span>
+            <span class="gooey-blob gooey-blob-item gooey-pos-1"></span>
+            <span class="gooey-blob gooey-blob-item gooey-pos-2"></span>
+            <span class="gooey-blob gooey-blob-item gooey-pos-3"></span>
+            <span class="gooey-blob gooey-blob-main"></span>
+        </div>
+
+        <!-- Unfiltered real buttons with crisp text labels -->
+        <div class="gooey-buttons" id="gooeyItems">
+            <button type="button" class="gooey-item gooey-pos-0" data-target="#about" aria-label="Go to About section" tabindex="-1">About</button>
+            <button type="button" class="gooey-item gooey-pos-1" data-target="#labs" aria-label="Go to Labs section" tabindex="-1">Labs</button>
+            <button type="button" class="gooey-item gooey-pos-2" data-target="#certifications" aria-label="Go to Certifications section" tabindex="-1">Certs</button>
+            <button type="button" class="gooey-item gooey-pos-3" data-target="learning.html" aria-label="Open Learning page" tabindex="-1">Learning</button>
+
+            <button
+                type="button"
+                class="gooey-trigger"
+                id="gooeyTrigger"
+                aria-label="Open navigation menu"
+                aria-expanded="false"
+                aria-controls="gooeyItems"
+            >
+                <span class="material-icons-outlined" aria-hidden="true">add</span>
+            </button>
+        </div>
+    </nav>
+
     <!-- Back to Top Floating Button -->
     <button type="button" class="back-to-top glass" id="backToTop" aria-label="Back to top" title="Back to top">
         <svg class="btt-progress" viewBox="0 0 46 46" aria-hidden="true">
@@ -2387,14 +2618,6 @@
         </svg>
         <span class="material-icons-outlined" aria-hidden="true">arrow_upward</span>
     </button>
-
-    <!-- Mobile & Tablet Quick Bar -->
-    <nav class="mobile-quick-bar glass" aria-label="Mobile Quick Navigation">
-        <a href="#about" class="mobile-quick-link">About</a>
-        <a href="#labs" class="mobile-quick-link">Labs</a>
-        <a href="#certifications" class="mobile-quick-link">Certs</a>
-        <a href="learning.html" class="mobile-quick-link highlight">Learning ↗</a>
-    </nav>
 
     <!-- ==========================================================================
          SLIDE-OVER INSPECTOR DRAWER
@@ -2896,6 +3119,68 @@ passwordauthentication no`
             });
             if (window.updateDuskBackground) window.updateDuskBackground();
         };
+
+        /* ==========================================================================
+           GOOEY ARC MENU CONTROLLER (MOBILE & TABLET ONLY — BOTTOM LEFT)
+        ========================================================================== */
+        (function initGooeyMenu() {
+            const menu = document.getElementById("gooeyMenu");
+            const trigger = document.getElementById("gooeyTrigger");
+            if (!menu || !trigger) return;
+
+            const items = Array.from(menu.querySelectorAll(".gooey-item"));
+            let isOpen = false;
+
+            function setOpen(next) {
+                isOpen = next;
+                menu.classList.toggle("is-open", isOpen);
+                trigger.setAttribute("aria-expanded", String(isOpen));
+                trigger.setAttribute("aria-label", isOpen ? "Close navigation menu" : "Open navigation menu");
+                items.forEach(btn => {
+                    btn.tabIndex = isOpen ? 0 : -1;
+                });
+            }
+
+            trigger.addEventListener("click", (e) => {
+                e.stopPropagation();
+                setOpen(!isOpen);
+            });
+
+            items.forEach(btn => {
+                btn.addEventListener("click", () => {
+                    const target = btn.getAttribute("data-target");
+                    setOpen(false);
+                    if (!target) return;
+                    if (target === "learning.html") {
+                        if (window.triggerLearningWipe) {
+                            window.triggerLearningWipe(target);
+                        } else {
+                            window.location.href = target;
+                        }
+                    } else if (target.startsWith("#")) {
+                        const section = document.querySelector(target);
+                        if (section) {
+                            const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+                            section.scrollIntoView({ behavior: reduced ? "auto" : "smooth" });
+                        }
+                    }
+                });
+            });
+
+            document.addEventListener("pointerdown", (e) => {
+                if (isOpen && !menu.contains(e.target)) {
+                    setOpen(false);
+                }
+            });
+
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "Escape" && isOpen) {
+                    e.preventDefault();
+                    setOpen(false);
+                    trigger.focus();
+                }
+            });
+        })();
 
         /* ==========================================================================
            EXPANDING SEARCH + REAL LIVE SITE SEARCH ENGINE
