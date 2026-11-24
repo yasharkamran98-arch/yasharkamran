@@ -1765,6 +1765,7 @@ button {
     color: var(--text-gray);
     display: -webkit-box;
     -webkit-line-clamp: 1;
+    line-clamp: 1;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -3046,6 +3047,50 @@ button {
     }
 }
 
+/* Mobile-only compact Expanding Search (prevents viewport overflow at 100% zoom) */
+@media (max-width: 768px) {
+    .exp-search {
+        position: static;
+    }
+    .exp-search-field {
+        right: 0;
+        width: min(240px, calc(100vw - 24px));
+        height: 34px;
+        gap: 6px;
+        padding: 0 6px 0 10px;
+        clip-path: inset(0 0 0 calc(100% - 34px) round 999px);
+    }
+    .exp-search-icon {
+        font-size: 16px;
+    }
+    .exp-search-input {
+        font-size: 0.78rem;
+    }
+    .exp-search-close {
+        width: 24px;
+        height: 24px;
+    }
+    .exp-search-close .material-icons-outlined {
+        font-size: 15px;
+    }
+    .exp-search-results {
+        right: 0;
+        top: calc(100% + 8px);
+        width: min(260px, calc(100vw - 24px));
+        max-height: 52vh;
+        border-radius: 14px;
+    }
+    .search-result-item {
+        padding: 7px 10px;
+    }
+    .search-result-title {
+        font-size: 0.82rem;
+    }
+    .search-result-snippet {
+        font-size: 0.72rem;
+    }
+}
+
 @media (max-width: 480px) {
     .header {
         padding: 0 10px;
@@ -3065,6 +3110,13 @@ button {
     .exp-search-trigger {
         width: 34px;
         height: 34px;
+    }
+    .exp-search-field {
+        width: min(210px, calc(100vw - 20px));
+        height: 32px;
+    }
+    .exp-search-results {
+        width: min(235px, calc(100vw - 20px));
     }
     .lesson-page {
         padding: 16px 12px;
